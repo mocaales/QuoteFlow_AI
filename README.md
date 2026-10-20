@@ -2,6 +2,7 @@
 
 QuoteFlow AI je nastajajoča večpodjetniška B2B spletna aplikacija za obdelavo povpraševanj (RFQ) in prodajnih ponudb. Nabavnik odda povpraševanje ter ponudnike izbere sam ali izbiro prepusti sistemu. Za vsakega ponudnika nastane ločen osnutek ponudbe, ki ga mora pooblaščeni ponudnik pregledati in izrecno odobriti, preden ga lahko vidi nabavnik.
 
+Repozitorij: [mocaales/QuoteFlow_AI](https://github.com/mocaales/QuoteFlow_AI).
 
 ## Tehnološki sklad
 
@@ -14,6 +15,11 @@ QuoteFlow AI je nastajajoča večpodjetniška B2B spletna aplikacija za obdelavo
 | Lokalni zagon | Docker Compose ali ločen zagon obeh delov |
 
 Poslovna shema je `quoteflow`, interne funkcije pa so v `quoteflow_private`. Migracije v `supabase/migrations/` so edini vir sprememb sheme. Aplikacijski dostop do baze uporablja omejeno vlogo; uporabniški postopki pisanja še niso odprti.
+
+## Trenutno stanje
+
+- **Izvedeno:** ogrodje React/FastAPI, demonstracijski kalkulator, preverjanje povezave z bazo, začetne migracije in testi izračuna ter dostopa.
+- **Načrtovano:** prijava v aplikacijo, ciljni podatkovni model iz dokumenta 03, RFQ in odobritveni proces, AI-agent ter obvestila. Trenutna baza še uporablja starejšo shemo, zato dokumentacija ne pomeni, da so te funkcije že na voljo.
 
 ## Lokalni zagon
 
@@ -68,5 +74,8 @@ RUN_DATABASE_TESTS=1 .venv/bin/python -m pytest -q
 - [Funkcionalnosti in obseg](docs/02-funkcionalnosti-in-obseg.md)
 - [Podatkovni model](docs/03-podatkovni-model.md)
 - [Arhitektura in tehnološki sklad](docs/04-arhitektura-in-tehnoloski-sklad.md)
+- [Uporabniške zgodbe in merila sprejema](docs/05-uporabniske-zgodbe.md)
+- [Žični modeli aplikacije](docs/06-wireframes.md)
+- [Arhitekturne odločitve in predloga ADR](docs/adr/README.md)
 
 OPP uporablja ločeno študijo konkretnega poslovnega primera in ne določa obsega razvoja te aplikacije.

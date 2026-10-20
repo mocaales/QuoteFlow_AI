@@ -2,10 +2,20 @@
 .venv/
 __pycache__/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage*
+htmlcov/
+coverage/
 node_modules/
 dist/
+.idea/
 .DS_Store
 *.tsbuildinfo
+*.py[cod]
+*.log
+*_naloga*.zip
+*_github_oddaja.txt
 
 .env.*
 !.env.example
