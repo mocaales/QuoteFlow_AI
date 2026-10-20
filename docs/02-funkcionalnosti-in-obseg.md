@@ -6,23 +6,23 @@ Rešitev predvideva **15 funkcionalnosti**: sedem za prvo delujočo različico (
 
 | Vloga | Možnosti in pravice |
 |---|---|
-| Nabavnik | Za svoje podjetje odda RFQ, izbere ponudnike, spremlja stanje in vidi samo odobrene ponudbe, naslovljene nanj. |
-| Ponudnik | Za svoje podjetje ureja katalog in prodajna pravila ter vidi dodeljene RFQ in lastne osnutke. Ponudbo lahko popravi, zavrne ali odobri. |
-| Administrator | Upravlja podjetja, članstva in uporabniški dostop. Nima privzete pravice odobriti ponudbe namesto ponudnika ali brati njegovih internih kalkulacij. |
+| Nabavnik | Za podjetje, pri katerem ima pravico nabavnika, odda RFQ, izbere podjetja ponudnikov, spremlja stanje in vidi samo odobrene ponudbe za svoj RFQ. |
+| Ponudnik | Za podjetje, pri katerem ima pravico ponudnika, ureja cenik blaga in storitev, morebitne zaloge ter pravila. Vidi povpraševanja, h katerim je podjetje povabljeno, in svoje osnutke; ponudbo lahko popravi, zavrne ali izrecno odobri. |
+| Administrator | Kot globalna vloga upravlja podjetja in dodelitve pravic. Nima privzete pravice odobriti ponudbe ali brati internih kalkulacij ponudnika. |
 
-AI-agent je **sistemski akter**, ne uporabniška vloga. Pripravi osnutke, vendar ne more odobriti ali objaviti ponudbe.
+AI-agent je **sistemski akter**, ne uporabniška vloga. Pripravi osnutke, vendar ne more odobriti ponudbe ali je narediti vidne nabavniku.
 
 ## Predvidene funkcionalnosti
 
 | ID | Funkcionalnost | Obseg |
 |---|---|---|
-| F1 | Registracija, prijava, podjetja, članstva in uporabniške pravice. | **MVP** |
-| F2 | Ponudnik vnese in potrdi izdelke, cene, stroške, zaloge, dobavne roke in prodajna pravila. | **MVP** |
+| F1 | Registracija, prijava, podjetja in enotne dodelitve pravic uporabnikom. | **MVP** |
+| F2 | Ponudnik vnese in potrdi postavke cenika za blago ali storitve, cene, stroške, morebitne zaloge, dobavne roke in prodajna pravila. | **MVP** |
 | F3 | Nabavnik odda RFQ s postavkami, količinami in dobavnimi zahtevami ter spremlja njegovo stanje. | **MVP** |
-| F4 | Nabavnik ročno izbere registrirane ponudnike ali sistem samodejno poišče ustrezne in zabeleži razloge izbire. | **MVP** |
-| F5 | AI-agent analizira RFQ; sistem za vsakega ponudnika iz potrjenih podatkov pripravi ločen osnutek ter programsko preveri cene, zaloge, marže in pravila. | **MVP** |
+| F4 | Nabavnik ročno izbere registrirana podjetja ponudnikov ali jih sistem samodejno poišče; za vsako ustvari en zapis ponudbe v stanju `povabljena` in zabeleži razlog izbire. | **MVP** |
+| F5 | AI-agent analizira RFQ; sistem za vsakega ponudnika iz potrjenih podatkov pripravi ločen osnutek ter programsko preveri cene, morebitne zaloge, marže in pravila. | **MVP** |
 | F6 | Ponudnik osnutek pregleda, popravi, zavrne ali izrecno odobri; po spremembi se izračuni ponovijo. | **MVP** |
-| F7 | Nabavnik vidi samo odobrene ponudbe; sistem shrani različico, odločevalca in čas odobritve. | **MVP** |
+| F7 | Nabavnik vidi samo odobrene ponudbe brez internih stroškov; sistem shrani različico, odobritelja in čas odobritve ter zaklene ponudbo. | **MVP** |
 | F8 | Nabavnik primerja odobrene ponudbe za isti RFQ po ceni in dobavnih pogojih. | Pozneje |
 | F9 | Izvoz odobrene ponudbe v PDF brez internih stroškov ponudnika. | Pozneje |
 | F10 | Obvestila v aplikaciji in po e-pošti ob novem osnutku ali odobreni ponudbi. | Pozneje |
@@ -40,7 +40,7 @@ F4, F5 in F6 so domensko specifične funkcionalnosti, ki presegajo osnovno dodaj
 |---|---|
 | F16 | Iskanje dodatnih ponudnikov po spletu z navedbo vira in časa; neregistrirano podjetje ne more izdati potrjene ponudbe v aplikaciji. |
 | F17 | Dovoljeno pridobivanje javnih podatkov s spletnih strani; ti ostanejo nepotrjeni do ponudnikove potrditve. |
-| F18 | Povezava s ponudnikovim ERP za osveževanje kataloga in zalog. |
+| F18 | Povezava s ponudnikovim ERP za osveževanje cenika in zalog blaga. |
 | F19 | Večstopenjska odobritev ponudb, ki odstopajo od poslovnih pravil. |
 | F20 | Podpora več valutam in merskim enotam z določenimi pravili pretvorbe. |
 
