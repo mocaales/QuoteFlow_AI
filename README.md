@@ -1,71 +1,57 @@
 # QuoteFlow AI
 
-QuoteFlow AI je nastajajoča večpodjetniška B2B spletna aplikacija za obdelavo povpraševanj (RFQ) in prodajnih ponudb. Nabavnik odda povpraševanje ter ponudnike izbere sam ali izbiro prepusti sistemu. Za vsakega ponudnika nastane ločen osnutek ponudbe, ki ga mora pooblaščeni ponudnik pregledati in izrecno odobriti, preden ga lahko vidi nabavnik.
+Večpodjetniška B2B spletna aplikacija za povpraševanja (RFQ) in ponudbe. Nabavnik izbere ponudnike ročno ali samodejno; AI pomaga pripraviti osnutek, ponudnik pa ga pred prikazom nabavniku izrecno odobri.
 
-Repozitorij: [mocaales/QuoteFlow_AI](https://github.com/mocaales/QuoteFlow_AI).
+**Tehnologije:** React, TypeScript, Vite · Python, FastAPI · Supabase PostgreSQL in Supabase Auth.
 
-## Tehnološki sklad
+## Zagon z Dockerjem
 
-| Del | Tehnologija |
+1. Če lokalna konfiguracija še ne obstaja, ustvarite `.env`:
+
+   ```sh
+   test -f .env || cp .env.example .env
+   ```
+
+2. V `.env` nastavite povezavo do svojega projekta Supabase. Datoteke ne dodajajte v Git.
+
+   | Spremenljivka | Namen |
+   |---|---|
+   | `SUPABASE_PROJECT_REF` | Identifikator projekta Supabase. |
+   | `SUPABASE_URL` | URL projekta za prijavo. |
+   | `SUPABASE_PUBLISHABLE_KEY` | Javni ključ projekta za prijavo (publishable ali starejši anon). |
+   | `DATABASE_URL` | PostgreSQL povezava aplikacije z omejeno vlogo `quoteflow_app` in `sslmode=require`. |
+   | `DATABASE_MIGRATION_URL` | Skrbniška povezava za pripravo baze in migracije; za običajni zagon ni potrebna. |
+
+3. Zgradite in zaženite aplikacijo:
+
+   ```sh
+   docker compose up --build -d
+   ```
+
+| Storitev | Naslov |
 |---|---|
-| Spletni vmesnik | React, TypeScript, Vite |
-| Strežniški API | Python, FastAPI |
-| Podatkovna baza | Supabase PostgreSQL |
-| Identiteta | Supabase Auth (integracija v aplikacijo je načrtovana) |
-| Lokalni zagon | Docker Compose ali ločen zagon obeh delov |
+| Spletna aplikacija | http://localhost:5173 |
+| Dokumentacija API | http://localhost:8000/docs |
+| Delovanje API-ja | http://localhost:8000/api/health |
+| Povezava in pripravljenost baze | http://localhost:8000/api/ready |
 
-Poslovna shema je `quoteflow`, interne funkcije pa so v `quoteflow_private`. Migracije v `supabase/migrations/` so edini vir sprememb sheme. Aplikacijski dostop do baze uporablja omejeno vlogo; uporabniški postopki pisanja še niso odprti.
+Compose zažene frontend in backend; baza ostane v Supabase.
 
-## Trenutno stanje
+Migracije iz `supabase/migrations/` se ne izvajajo samodejno.
 
-- **Izvedeno:** ogrodje React/FastAPI, demonstracijski kalkulator, preverjanje povezave z bazo, začetne migracije in testi izračuna ter dostopa.
-- **Načrtovano:** prijava v aplikacijo, ciljni podatkovni model iz dokumenta 03, RFQ in odobritveni proces, AI-agent ter obvestila. Trenutna baza še uporablja starejšo shemo, zato dokumentacija ne pomeni, da so te funkcije že na voljo.
+Kalkulator deluje tudi brez baze; `/api/ready` ob manjkajoči povezavi ali nepripravljeni bazi vrne HTTP 503.
 
-## Lokalni zagon
-
-Za poln preizkus povezave z bazo potrebujete veljaven `DATABASE_URL` za projekt Supabase. Kopirajte predlogo in dopolnite lokalno datoteko `.env`; skrivnosti ne dodajajte v repozitorij.
+Stanje in dnevniki:
 
 ```sh
-cp -n .env.example .env
-docker compose up --build
+docker compose ps
+docker compose logs -f
 ```
 
-Vmesnik je na <http://localhost:5173>, dokumentacija API-ja pa na <http://localhost:8000/docs>. Demonstracijski kalkulator deluje tudi brez povezave z bazo. `/api/health` preverja API, `/api/ready` pa povezavo z bazo in brez nje vrne HTTP 503. Compose zažene vmesnik in API; podatkovna baza ostane v Supabase.
-
-Za razvoj brez Dockerja zaženite dela v ločenih terminalih:
+Ustavitev:
 
 ```sh
-cd backend
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.lock.txt
-.venv/bin/uvicorn app.main:app --reload
-```
-
-```sh
-cd frontend
-npm ci
-npm run dev
-```
-
-Backend uporablja Python 3.13, frontend pa Node.js 22 ali 24. Pri ločenem razvojnem zagonu Vite posreduje zahtevke `/api` backendu na vratih 8000.
-
-## Preverjanje
-
-```sh
-cd backend
-.venv/bin/python -m pytest -q
-```
-
-```sh
-cd frontend
-npm run build
-```
-
-Testi proti dejanski bazi so ločeni od običajnih testov in zahtevajo nastavljen `DATABASE_URL`:
-
-```sh
-cd backend
-RUN_DATABASE_TESTS=1 .venv/bin/python -m pytest -q
+docker compose down
 ```
 
 ## Dokumentacija
@@ -73,9 +59,9 @@ RUN_DATABASE_TESTS=1 .venv/bin/python -m pytest -q
 - [Zasnova rešitve](docs/01-zasnova-resitve.md)
 - [Funkcionalnosti in obseg](docs/02-funkcionalnosti-in-obseg.md)
 - [Podatkovni model](docs/03-podatkovni-model.md)
-- [Arhitektura in tehnološki sklad](docs/04-arhitektura-in-tehnoloski-sklad.md)
-- [Uporabniške zgodbe in merila sprejema](docs/05-uporabniske-zgodbe.md)
-- [Žični modeli aplikacije](docs/06-wireframes.md)
-- [Arhitekturne odločitve in predloga ADR](docs/adr/README.md)
-
-OPP uporablja ločeno študijo konkretnega poslovnega primera in ne določa obsega razvoja te aplikacije.
+- [Arhitektura in tehnologije](docs/04-arhitektura-in-tehnoloski-sklad.md)
+- [Uporabniške zgodbe](docs/05-uporabniske-zgodbe.md)
+- [Wireframi](docs/06-wireframes.md)
+- [Arhitekturne odločitve](docs/adr/)
+- [Razvoj US-01–US-02: identiteta in pravice](docs/razvoj/us-01-us-02-identiteta-in-pravice.md)
+- [Organizacija frontenda](docs/razvoj/frontend-arhitektura.md)

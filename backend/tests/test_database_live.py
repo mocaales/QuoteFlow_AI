@@ -16,7 +16,7 @@ def test_runtime_cannot_escalate_or_write():
                 conn.execute('set local role postgres')
         with conn.transaction():
             conn.execute('set local role authenticated')
-            assert conn.execute('select count(*) from quoteflow.quotes').fetchone()[0] == 0
+            assert conn.execute('select count(*) from quoteflow.ponudba').fetchone()[0] == 0
             with pytest.raises(psycopg.errors.InsufficientPrivilege):
                 with conn.transaction():
-                    conn.execute("insert into quoteflow.companies(name) values ('MUST NOT BE INSERTED')")
+                    conn.execute("insert into quoteflow.podjetje(naziv) values ('MUST NOT BE INSERTED')")

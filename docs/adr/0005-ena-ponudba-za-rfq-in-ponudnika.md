@@ -2,7 +2,7 @@
 
 - **Status:** sprejeto
 - **Datum:** 2026-10-20
-- **Izvedba:** načrtovana v ciljnem modelu; sedanja baza ima ločene stare tabele
+- **Izvedba:** delna; enotna tabela ponudba je uvedena, uporabniški postopek ponudb sledi v naslednjih sklopih
 
 ## Kontekst in problem
 

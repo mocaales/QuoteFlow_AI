@@ -11,10 +11,9 @@ from psycopg.conninfo import conninfo_to_dict
 load_dotenv(Path(__file__).resolve().parents[2] / '.env', override=False, interpolate=False)
 
 EXPECTED_TABLES = {
-    'user_profiles', 'companies', 'company_members', 'platform_admins',
-    'supplier_profiles', 'products', 'supplier_products', 'pricing_policies',
-    'rfqs', 'rfq_items', 'rfq_recipients', 'agent_runs', 'quotes', 'quote_items',
-    'quote_revisions', 'approvals', 'published_quotes', 'published_quote_items', 'audit_events',
+    'uporabnik', 'podjetje', 'vloga_uporabnika', 'pravila_ponudnika',
+    'postavka_cenika', 'zaloga', 'povprasevanje', 'postavka_povprasevanja',
+    'ponudba', 'postavka_ponudbe',
 }
 
 class DatabaseConfigurationError(Exception):
@@ -65,7 +64,7 @@ def database_readiness():
             connection.execute('set local role authenticated')
             connection.execute("select set_config('request.jwt.claim.sub', '', true)")
             connection.execute("select set_config('request.jwt.claims', '{}', true)")
-            if connection.execute('select count(*) from quoteflow.companies').fetchone()[0] != 0:
+            if connection.execute('select count(*) from quoteflow.podjetje').fetchone()[0] != 0:
                 return 'database_access_unsafe'
         return 'ok'
     except DatabaseConfigurationError as error:

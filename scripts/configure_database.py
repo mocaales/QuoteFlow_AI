@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     env = ROOT / '.env'
     values = dotenv_values(env, interpolate=False)
-    original = values.get('DATABASE_URL') or ''
+    original = values.get('DATABASE_URL') or values.get('DATABASE_MIGRATION_URL') or ''
     ref = values.get('SUPABASE_PROJECT_REF')
     parts = urlsplit(original)
     if not ref or not parts.hostname or ref not in (parts.username or '') + parts.hostname:
@@ -42,14 +42,14 @@ def main():
     host = parts.hostname + (f':{parts.port}' if parts.port else '')
     runtime_url = urlunsplit(parts._replace(netloc=f'{quote(username)}:{quote(password)}@{host}',query=urlencode(query)))
     # Save before probing so a transient network error cannot lose the new credential.
-    set_key(env, 'MIGRATION_DATABASE_URL', admin_url)
+    set_key(env, 'DATABASE_MIGRATION_URL', admin_url)
     set_key(env, 'DATABASE_URL', runtime_url)
     env.chmod(0o600)
     with psycopg.connect(runtime_url, connect_timeout=8, prepare_threshold=None) as conn:
         assert conn.pgconn.ssl_in_use
         assert conn.execute('select current_user').fetchone()[0] == 'quoteflow_app'
         conn.execute('set local role authenticated')
-        assert conn.execute('select count(*) from quoteflow.companies').fetchone()[0] == 0
+        assert conn.execute('select count(*) from quoteflow.podjetje').fetchone()[0] == 0
     print('Restricted login configured; TLS active; no user identity means no business rows.')
 
 if __name__ == '__main__':

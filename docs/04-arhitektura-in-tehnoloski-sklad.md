@@ -2,8 +2,8 @@
 
 ## Poslovni tok
 
-1. Nabavnik z aktivno pravico `buyer` odda RFQ za svoje podjetje. Zahteve so prosto opisane; niso vezane na cenik enega ponudnika.
-2. Ročna izbira ali sistemsko ujemanje ustvari po eno ponudbo v stanju `povabljena` za vsako registrirano podjetje ponudnika. Neobvezni kontaktni uporabnik mora imeti pri njem aktivno pravico `supplier`.
+1. Nabavnik z aktivno pravico `nabavnik` odda RFQ za svoje podjetje. Zahteve so prosto opisane; niso vezane na cenik enega ponudnika.
+2. Ročna izbira ali sistemsko ujemanje ustvari po eno ponudbo v stanju `povabljena` za vsako registrirano podjetje ponudnika. Neobvezni kontaktni uporabnik mora imeti pri njem aktivno pravico `ponudnik`.
 3. Backend posreduje omejenemu AI-agentu besedilo RFQ in dovoljene podatke potrjenega cenika blaga ali storitev. Agent vrne strukturiran predlog razumevanja in ujemanja. Manjkajoče ali dvoumne podatke označi za pregled.
 4. Backend za vsakega izbranega ponudnika pripravi ločen osnutek. Programska pravila preverijo ceno, strošek, maržo, morebitno zalogo, popust in rok; agent teh vrednosti ne potrjuje.
 5. Ponudnik osnutek popravi, zavrne ali odobri. Ob odobritvi sistem še enkrat preveri pravice in izračune ter v eni transakciji zabeleži odobritelja, čas in stanje `odobrena` ter zaklene ponudbo s postavkami. Nabavnik vidi le odobreno ponudbo brez internih stroškov.
@@ -36,4 +36,4 @@ API pri vsakem zahtevku preveri uporabnika, aktivno dodelitev pravice in podjetj
 - **AI predlaga, program preveri, človek odobri:** model ne določa poslovno zavezujočih cen ali zalog.
 - **E-pošta ni transakcija odobritve:** odobrena ponudba ostane veljavna tudi ob začasni napaki SMTP; pošiljanje in stanje dostave se vodita ločeno.
 
-Podrobne entitete, ključi in povezave so v [podatkovnem modelu](03-podatkovni-model.md). To je **ciljna arhitektura**. Trenutno ogrodje vsebuje demonstracijski kalkulator in starejšo shemo; opisani RFQ-proces, agent, odobritev ter e-pošta še niso v celoti implementirani. Spletno odkrivanje dodatnih ponudnikov in dovoljeno pridobivanje javnih podatkov ostajata nadgradnji; tak podatek ni potrjena ponudba.
+Podrobne entitete, ključi in povezave so v [podatkovnem modelu](03-podatkovni-model.md). To je **ciljna arhitektura**. Model iz dokumenta 03 ter registracija, prijava, preverjanje sej in administracija podjetij in vlog so uvedeni. RFQ-proces, agent, odobritev ter e-pošta še niso vključeni v uporabniške postopke. Spletno odkrivanje dodatnih ponudnikov in dovoljeno pridobivanje javnih podatkov ostajata nadgradnji; tak podatek ni potrjena ponudba.

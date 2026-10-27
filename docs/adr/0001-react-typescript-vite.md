@@ -2,7 +2,7 @@
 
 - **Status:** sprejeto
 - **Datum:** 2026-10-20
-- **Izvedba:** delna; trenutno obstaja demonstracijski kalkulator
+- **Izvedba:** delna; delujejo prijava, administracija in demonstracijski kalkulator
 
 ## Kontekst in problem
 
