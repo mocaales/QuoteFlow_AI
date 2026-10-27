@@ -2,7 +2,7 @@
 
 - **Status:** sprejeto
 - **Datum:** 2026-10-20
-- **Izvedba:** delna; API ima health/ready in demonstracijski izračun
+- **Izvedba:** delna; API vključuje preverjanje identitete, sej, podjetij in administratorske postopke
 
 ## Kontekst in problem
 

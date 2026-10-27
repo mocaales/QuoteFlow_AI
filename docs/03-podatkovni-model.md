@@ -14,7 +14,7 @@ Ponudnik osnutek pregleda, uredi in izrecno odobri. Odobritev se zabeleži s sta
 
 ## Entitete in ključni atributi
 
-`PK` = primarni ključ, `FK` = tuji ključ, `UQ` = enoličnost, `?` = neobvezno. Imena atributov so zaradi tehnične berljivosti zapisana brez šumnikov. To je **ciljni model**, ne trenutno stanje podatkovne baze.
+`PK` = primarni ključ, `FK` = tuji ključ, `UQ` = enoličnost, `?` = neobvezno. Imena atributov so zaradi tehnične berljivosti zapisana brez šumnikov. Model je uveden v shemi `quoteflow`; SQL-imena tabel in atributov sledijo slovenskim imenom iz tega dokumenta.
 
 | Entiteta | Ključni atributi | Zakaj obstaja |
 |---|---|---|
@@ -49,6 +49,8 @@ Vsaka povezava je označena z **imenom tujega ključa v podrejeni tabeli**. `||`
 
 **Poznejša nadgradnja F10 – Obvestilo:** `id PK`, `ponudba_id FK → Ponudba`, `prejemnik_vloga_id FK → Vloga uporabnika`, `dogodek`, `kanal`, `stanje_dostave`, `kljuc_brez_podvajanja UQ`, `poslano_ob?`. Dogodek razlikuje novo povabilo, osnutek in odobreno ponudbo. Prejemnik mora imeti ustrezno aktivno vlogo pri kupcu ali ponudniku. Obvestilo je ločen zapis o dostavi, ne odločitev o ponudbi; e-pošta vsebuje povezavo do aplikacije, ne cen ali internih stroškov.
 
-## Povezava z obstoječo bazo
+## Stanje uvedbe
 
-Ta model **še ni uveden** v Supabase. Trenutne migracije imajo drugačne tabele, med drugim ločen `products`, `rfq_recipients`, `approvals` in `published_quotes`. Zato ta dokument ne pomeni, da so te tabele že odstranjene: za uvedbo novega modela so potrebni migracija, prenos podatkov in testi dostopa med podjetji.
+Migracija `20261027161706_identity_and_permissions.sql` je zamenjala staro poslovno shemo z navedenimi desetimi entitetami. Stare tabele, med njimi `products`, `company_members`, `platform_admins` in `published_quotes`, so odstranjene. Supabase Auth ostaja vir prijavne identitete; `uporabnik` se samodejno usklajuje z `auth.users` brez dodeljevanja poslovnih pravic ob registraciji.
+
+Prijava in administracija podjetij ter vlog sta vključeni v aplikacijo. Preostale poslovne tabele so pripravljene za nadaljnje MVP sklope; uporabniški postopki za RFQ, cenik in ponudbe še niso odprti. Vse tabele imajo RLS, pisanje podjetij in dodelitev pa poteka prek omejenih administratorskih funkcij.

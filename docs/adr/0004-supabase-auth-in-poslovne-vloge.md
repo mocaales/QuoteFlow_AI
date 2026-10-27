@@ -2,7 +2,7 @@
 
 - **Status:** sprejeto
 - **Datum:** 2026-10-20
-- **Izvedba:** načrtovana; prijava v poslovni del še ni vključena
+- **Izvedba:** izvedena; Auth, aktivne seje in enotne poslovne vloge so vključeni v API in vmesnik
 
 ## Kontekst in problem
 

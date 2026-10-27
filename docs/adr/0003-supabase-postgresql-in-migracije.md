@@ -2,7 +2,7 @@
 
 - **Status:** sprejeto
 - **Datum:** 2026-10-20
-- **Izvedba:** delna; povezava obstaja, ciljna shema iz dokumenta 03 še ni uvedena
+- **Izvedba:** izvedena; ciljna shema iz dokumenta 03 je uvedena z migracijo 20261027161706
 
 ## Kontekst in problem
 
