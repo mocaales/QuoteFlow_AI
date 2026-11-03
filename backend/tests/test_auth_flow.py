@@ -54,6 +54,19 @@ def test_real_registration_login_admin_and_revocation():
             assert h.patch(api+'/api/admin/vloge/'+role,headers=a,json={'aktivna':False}).status_code==200
             assert h.get(api+'/api/podjetja/'+company,headers=m).status_code==404
             assert h.get(api+'/api/me',headers=m).json()['vloge']==[]
+            # The supplier block uses the real Auth token and restricted runtime connection.
+            supplier={'uporabnik_id':users[1],'podjetje_id':company,'vloga':'ponudnik'}
+            assert h.post(api+'/api/admin/vloge',headers=a,json=supplier).status_code==200
+            base=api+'/api/podjetja/'+company
+            item={'vrsta':'blago','opis':'HTTP test item','enota':'kos','cena_na_enoto':'12.4500','strosek_na_enoto':'8.0000','dobavni_rok_dni':5}
+            r=h.post(base+'/cenik',headers=m,json=item);assert r.status_code==201,r.text
+            path=base+'/cenik/'+r.json()['id']
+            assert h.post(path+'/potrditev',headers=m).json()['potrjeno_ob']
+            assert h.put(path+'/zaloga',headers=m,json={'razpolozljiva_kolicina':'0'}).status_code==200
+            assert float(h.get(base+'/cenik',headers=m).json()[0]['razpolozljiva_kolicina'])==0
+            r=h.post(base+'/pravila',headers=m,json={'najmanjsa_marza':'.2','najvecji_popust':'.1','najdaljsi_rok_dni':7});assert r.status_code==201,r.text
+            assert h.get(base+'/cenik',headers=a).status_code==403
+            assert h.put(path,headers=m,json=item|{'cena_na_enoto':'13'}).json()['potrjeno_ob'] is None
             assert h.post(auth_url+'/logout',headers={'apikey':public}|m).status_code==204
             assert h.get(api+'/api/me',headers=m).status_code==401
             email=f'signup-{suffix}@example.test'
@@ -67,6 +80,10 @@ def test_real_registration_login_admin_and_revocation():
         finally:
             if users:
                 with psycopg.connect(status['DB_URL']) as c:
+                    if companies:
+                        c.execute('delete from quoteflow.zaloga where postavka_cenika_id in (select id from quoteflow.postavka_cenika where podjetje_id=any(%s::uuid[]))',(companies,))
+                        c.execute('delete from quoteflow.postavka_cenika where podjetje_id=any(%s::uuid[])',(companies,))
+                        c.execute('delete from quoteflow.pravila_ponudnika where podjetje_id=any(%s::uuid[])',(companies,))
                     c.execute('delete from quoteflow.vloga_uporabnika where uporabnik_id=any(%s::uuid[])',(users,))
                     if companies:c.execute('delete from quoteflow.podjetje where id=any(%s::uuid[])',(companies,))
                     c.execute('delete from quoteflow.uporabnik where id=any(%s::uuid[])',(users,))

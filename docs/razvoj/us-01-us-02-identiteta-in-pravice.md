@@ -15,6 +15,8 @@ Poslovne vloge so v `quoteflow.vloga_uporabnika`. Nabavnik in ponudnik potrebuje
 
 Registracija ne dodeli poslovnih vlog. Globalnega administratorja je mogoče določiti samo z ločenim skrbniškim postopkom za že registriran račun s potrjeno e-pošto.
 
+Ob vrnitvi fokusa v brskalnik in obnovi žetona se pravice osvežijo v ozadju, brez odstranitve trenutnega pogleda ali neshranjenih obrazcev. Začasna nedosegljivost prikaže obvestilo in ohrani pogled; odgovor `401` ali `403` oziroma dejanski odvzem vloge odstrani nedovoljeni pogled. Strežniško preverjanje vsakega poslovnega zahtevka ostaja obvezno.
+
 ## Migracije
 
 Edini vir sprememb sheme je `supabase/migrations/`. Model iz [dokumenta 03](../03-podatkovni-model.md) je uveden z migracijo `20261027161706_identity_and_permissions.sql`. Ta izrecno izbriše staro poslovno shemo, ohrani `auth.users` in zgradi deset dokumentiranih tabel. Pred uvedbo na drugem projektu najprej varnostno kopirajte staro poslovno shemo.

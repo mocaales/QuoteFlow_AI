@@ -154,7 +154,7 @@ def api_client(db, identities):
     from fastapi.testclient import TestClient
     from app.main import app
     from app.auth import Principal, current_user
-    from app.identity import session_database
+    from app.access import session_database
     users,_,_=identities
     selected={'name':'admin'}
     def principal():
