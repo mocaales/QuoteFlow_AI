@@ -65,3 +65,4 @@ docker compose down
 - [Arhitekturne odločitve](docs/adr/)
 - [Razvoj US-01–US-02: identiteta in pravice](docs/razvoj/us-01-us-02-identiteta-in-pravice.md)
 - [Organizacija frontenda](docs/razvoj/frontend-arhitektura.md)
+- [Razvoj US-03–US-05: podatki ponudnika](docs/razvoj/us-03-us-05-podatki-ponudnika.md)

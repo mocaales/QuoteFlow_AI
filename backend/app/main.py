@@ -2,14 +2,15 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 import psycopg
 from app.identity import router as identity_router
+from app.supplier import router as supplier_router
 from app.database import database_readiness
 from app.pricing import CalculationInput, CalculationResult, calculate
 
-app = FastAPI(title="QuoteFlow AI", version="0.2.0", description="Identiteta, podjetja in pravice. RFQ-proces še ni vključen.")
+app = FastAPI(title="QuoteFlow AI", version="0.3.0", description="Identiteta, pravice, cenik, zaloge in pravila ponudnika.")
 
 @app.get('/api/health')
 def health():
-    return {"status": "ok", "stage": "identity"}
+    return {"status": "ok", "stage": "supplier_data"}
 
 @app.get('/api/ready')
 def ready():
@@ -24,6 +25,7 @@ def demo_calculate(data: CalculationInput):
     return calculate(data)
 
 app.include_router(identity_router, prefix='/api')
+app.include_router(supplier_router, prefix='/api')
 
 @app.exception_handler(psycopg.Error)
 async def database_error(request: Request, error: psycopg.Error):
@@ -31,6 +33,8 @@ async def database_error(request: Request, error: psycopg.Error):
         code, message = 403, 'Za to dejanje nimate pravice.'
     elif isinstance(error, psycopg.errors.NoDataFound):
         code, message = 404, 'Zapis ni na voljo.'
+    elif isinstance(error, psycopg.errors.ExclusionViolation):
+        code, message = 409, 'Obdobje se prekriva z že načrtovanimi pravili. Preverite začetek in konec veljavnosti.'
     elif isinstance(error, psycopg.IntegrityError):
         code, message = 422, 'Neveljavna povezava ali stanje podatkov. Osvežite seznam in preverite vnos.'
     else:

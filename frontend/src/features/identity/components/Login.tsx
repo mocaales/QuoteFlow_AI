@@ -24,7 +24,7 @@ export default function Login({ client }: { client: SupabaseClient }) {
   finally { setBusy(false); }
  }
  return <div className="auth-page"><Brand/>
-  <section className="auth-form"><p className="eyebrow">DELOVNI PROSTOR</p><h1>{register ? 'Ustvarite račun' : 'Prijava'}</h1>
+  <section className="auth-form"><h1>{register ? 'Ustvarite račun' : 'Prijava'}</h1>
    <p className="muted">{register ? 'Po registraciji vam administrator dodeli dostop do podjetja.' : 'Prijavite se za dostop do svojega podjetja.'}</p>
    <form onSubmit={submit}><label>E-pošta<input name="email" type="email" autoComplete="email" maxLength={254} required/></label>
     <label>Geslo<input name="password" type="password" minLength={8} maxLength={128} autoComplete={register ? 'new-password' : 'current-password'} required/></label>
@@ -33,6 +33,6 @@ export default function Login({ client }: { client: SupabaseClient }) {
     <button disabled={busy}>{busy ? 'Počakajte …' : register ? 'Registriraj se' : 'Prijavi se'}</button>
    </form>
    <button className="text-button" disabled={busy} onClick={() => { setRegister(!register); setError(''); setNotice(''); }}>{register ? 'Že imate račun? Prijavite se' : 'Nimate računa? Registrirajte se'}</button>
-  </section><a className="demo-link" href="/demo">Odpri demonstracijski kalkulator →</a>
+  </section><p className="auth-intro">Povpraševanja, osnutki in odobrene ponudbe za B2B nabavo.</p><a className="demo-link" href="/demo">Odpri demonstracijski kalkulator →</a>
  </div>;
 }

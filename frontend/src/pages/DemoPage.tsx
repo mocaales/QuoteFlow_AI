@@ -22,7 +22,7 @@ export default function DemoPage() {
  return <div className="shell">
   <aside><Brand/><p className="muted">Delovni prostor</p><nav aria-label="Glavna navigacija"><a href="#calculation" aria-current="page">Preverjanje ponudbe <span>↗</span></a></nav><div className="sidebar-bottom">Razvojno ogrodje · 0.1<br/><span>{status}</span></div></aside>
   <main><header><span>Prodajne ponudbe / Kalkulacija</span><span className="tag">Demonstracija</span></header>
-   <section className="intro"><p className="eyebrow">PREGLED PRED ODOBRITVIJO</p><h1>Preverite pogoje ponudbe.</h1><p>Izračun cene, marže in odstopanj na enem mestu.</p></section>
+   <section className="intro"><h1>Preverite pogoje ponudbe.</h1><p>Izračun cene, marže in odstopanj na enem mestu.</p></section>
    <div className="workspace" id="calculation"><section><h2>Podatki za izračun</h2><p className="muted">Vnesene vrednosti so demonstracijske. Izračun se ne shrani kot ponudba.</p>
    <form onSubmit={submit} onChange={() => setResult(null)}><div className="fields">
     <label>Količina (kos)<input name="quantity" type="number" min="1" max="1000000" step="1" defaultValue="50" required/></label>
