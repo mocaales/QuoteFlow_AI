@@ -28,7 +28,7 @@ export default function WorkspacePage({ client, session }: { client: SupabaseCli
    const [p, c] = await Promise.all([getProfile(client), getCompanies(client)]);
    if (sequence !== request.current) return;
    setError(''); setProfile(p); setCompanies(c);
-   const own = c.filter(company => company.stanje === 'aktivno' && p.vloge.some(role => role.podjetje_id === company.id));
+   const own = c.filter(company => company.aktivno && p.vloge.some(role => role.podjetje_id === company.id && role.vloga === 'mojster'));
    setCompanyId(previous => own.some(company => company.id === previous) ? previous : own[0]?.id ?? '');
   } catch (e) {
    if (sequence !== request.current) return;
@@ -48,12 +48,12 @@ export default function WorkspacePage({ client, session }: { client: SupabaseCli
   window.addEventListener('focus', refresh);
   return () => { request.current++; window.removeEventListener('focus', refresh); };
  }, [client, session.access_token]);
- const admin = !!profile?.vloge.some(role => role.vloga === 'administrator');
- const ownCompanies = companies.filter(company => company.stanje === 'aktivno' && profile?.vloge.some(role => role.podjetje_id === company.id));
+ const admin = !!profile?.vloge.some(role => role.vloga === 'admin');
+ const ownCompanies = companies.filter(company => company.aktivno && profile?.vloge.some(role => role.podjetje_id === company.id && role.vloga === 'mojster'));
  const company = ownCompanies.find(c => c.id === companyId);
- const supplier = !!company && !!profile?.vloge.some(role => role.podjetje_id === company.id && role.vloga === 'ponudnik');
- const activeView = view === 'admin' ? admin ? 'admin' : 'overview' : ['cenik','zaloge','pravila'].includes(view) ? supplier ? view : 'overview' : view;
- const roleNames: Record<string, string> = { administrator: 'Administrator', nabavnik: 'Nabavnik', ponudnik: 'Ponudnik' };
+ const supplier = !!company && !!profile?.vloge.some(role => role.podjetje_id === company.id && role.vloga === 'mojster');
+ const activeView = view === 'admin' ? admin ? 'admin' : 'overview' : ['cenik','materiali','zaloge'].includes(view) ? supplier ? view : 'overview' : view;
+ const roleNames: Record<string, string> = { admin: 'Admin', stranka: 'Stranka', mojster: 'Mojster', delavec: 'Delavec' };
  const rolesAt = (id: string) => profile?.vloge.filter(role => role.podjetje_id === id).map(role => roleNames[role.vloga]).join(', ') ?? '';
  function go(next: View) { setView(next); setMenu(false); }
  const item = (id: View, icon: Parameters<typeof Icon>[0]['name'], label: string) => <button key={id} className={`nav-item ${activeView === id ? 'selected' : ''}`} aria-current={activeView === id ? 'page' : undefined} onClick={() => go(id)}><Icon name={icon}/>{label}</button>;
@@ -62,7 +62,7 @@ export default function WorkspacePage({ client, session }: { client: SupabaseCli
   <aside className="app-sidebar" id="app-menu"><Brand/>
    {!!ownCompanies.length && <label className="company-select">Aktivno podjetje<select value={companyId} disabled={busy} onChange={e => { setCompanyId(e.target.value); go('overview'); }}>{ownCompanies.map(c => <option key={c.id} value={c.id}>{c.naziv}</option>)}</select></label>}
    <nav aria-label="Glavna navigacija">{item('overview', 'grid', 'Pregled')}
-    {supplier && <><p className="nav-label nav-group">Podatki ponudnika</p>{item('cenik', 'list', 'Cenik')}{item('zaloge', 'stock', 'Zaloge')}{item('pravila', 'rules', 'Prodajna pravila')}</>}
+    {supplier && <><p className="nav-label nav-group">Podatki podjetja</p>{item('cenik', 'list', 'Cenik')}{item('zaloge', 'stock', 'Zaloge')}{item('materiali', 'list', 'Materiali')}</>}
     {admin && <><p className="nav-label nav-group">Upravljanje</p>{item('admin', 'users', 'Podjetja in pravice')}</>}
    </nav>
    <div className="sidebar-bottom"><a className="sidebar-link" href="/demo"><Icon name="calculator"/>Demo kalkulator</a>
@@ -71,11 +71,11 @@ export default function WorkspacePage({ client, session }: { client: SupabaseCli
    </div>
   </aside>
   <main className="app-main"><div className="sheet">{error && <p role="alert" className="alert">{error}</p>}{!profile && !error && <p role="status" className="loading-state">Preverjam dostop …</p>}
-  {profile && <>{activeView === 'admin' ? <Admin client={client}/> : supplier && company && (activeView === 'cenik' || activeView === 'zaloge' || activeView === 'pravila') ? <SupplierWorkspace key={company.id} client={client} companyId={company.id} tab={activeView}/> : <>
-   <div className="page-title"><div><h1>{company ? company.naziv : 'Moj račun'}</h1><p>{company ? `Vaše vloge pri podjetju: ${rolesAt(company.id)}.` : 'Pregled vaših poslovnih dostopov.'}</p></div></div>
-   {!profile.vloge.length ? <section className="empty-state"><h2>Dostop še ni dodeljen</h2><p>Račun je ustvarjen. Administrator vam mora dodeliti poslovno vlogo pri podjetju.</p></section> : <div className="overview">
+  {profile && <>{activeView === 'admin' ? <Admin client={client}/> : supplier && company && (activeView === 'cenik' || activeView === 'zaloge' || activeView === 'materiali') ? <SupplierWorkspace key={company.id} client={client} companyId={company.id} tab={activeView}/> : <>
+   <div className="page-title"><div><h1>{company ? company.naziv : 'Moj račun'}</h1><p>{company ? `Vaše vloge pri podjetju: ${rolesAt(company.id)}.` : 'Pregled vaših poslovnih dostopov. Projekti in ponudbe bodo na voljo v naslednjih sklopih.'}</p></div></div>
+   {!profile.vloge.length ? <section className="empty-state"><h2>Dostop še ni dodeljen</h2><p>Račun je ustvarjen. Za podjetje potrebujete ustrezno dodelitev poslovne vloge.</p></section> : <div className="overview">
     <div className="overview-actions">
-     {supplier && <section className="panel"><h2>Podatki za ponudbe</h2><p>Osnutki ponudb uporabljajo samo potrjene postavke cenika, zaloge in veljavna prodajna pravila.</p><button onClick={() => go('cenik')}>Odpri cenik <Icon name="arrow"/></button></section>}
+     {supplier && <section className="panel"><h2>Podatki za ponudbe</h2><p>Urejajte postavke dela, materiale in zaloge podjetja.</p><button onClick={() => go('cenik')}>Odpri cenik <Icon name="arrow"/></button></section>}
      {admin && <section className="panel"><h2>Administracija</h2><p>Upravljanje podjetij in dodelitev poslovnih vlog.</p><button className="secondary" onClick={() => go('admin')}>Podjetja in pravice <Icon name="arrow"/></button></section>}
     </div>
     <section className="membership-section"><h2>Moja podjetja</h2>{ownCompanies.length ? <div className="table-wrap"><table><thead><tr><th>Podjetje</th><th>Vaše vloge</th><th><span className="sr-only">Dejanje</span></th></tr></thead><tbody>{ownCompanies.map(c => <tr key={c.id}><td><strong>{c.naziv}</strong></td><td className="muted">{rolesAt(c.id)}</td><td>{companyId === c.id ? <span className="status-badge confirmed">Izbrano</span> : <IconButton icon="arrow" label={`Izberi ${c.naziv}`} tip="Izberi" onClick={() => { setCompanyId(c.id); go('overview'); }}/>}</td></tr>)}</tbody></table></div> : <p className="muted">Poslovna vloga pri podjetju vam ni dodeljena.</p>}</section>

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="760" viewBox="0 0 1120 760" role="img" aria-labelledby="title desc">
+<title id="title">Cenik, materiali in zaloga</title><desc id="desc">Načrtovani žični model; vloga mojster · Gradnje Primer. Ne predstavlja izvedenega zaslona.</desc>
+<style>text{font-family:Arial,sans-serif;fill:#243039;font-size:16px}.title{font-size:28px;font-weight:700}.label{font-size:19px;font-weight:700}.small{font-size:14px;fill:#52616b}.action{font-weight:700}</style>
+<rect width="1120" height="760" fill="#f5f6f7"/>
+<rect width="1120" height="78" fill="#e6eaed"/>
+<text x="32" y="36" class="label">QuoteFlow AI</text>
+<text x="32" y="61" class="small">Žični model · mojster · Gradnje Primer · načrtovano</text>
+<text x="32" y="126" class="title">Cenik, materiali in zaloga</text>
+<rect x="32" y="160" width="510" height="510" rx="6" fill="white" stroke="#aeb8c0"/>
+<text x="54" y="196" class="label">Postavka cenika</text>
+<text x="54" y="234">Naziv: Rušenje estriha</text>
+<text x="54" y="266">Vrsta dela: rušenje · enota: m²</text>
+<text x="54" y="298">Cena na enoto: 20,00 EUR</text>
+<text x="54" y="330">DDV: 22 %</text>
+<text x="54" y="362">Materialna sestava je neobvezna.</text>
+<text x="54" y="394">Primer druge postavke: polaganje ploščic</text>
+<text x="54" y="426">Lepilo: 4 kg za 1 m² dela</text>
+<rect x="52" y="615" width="470" height="36" rx="3" fill="#e6eaed"/>
+<text x="64" y="639" class="action">Shrani postavko</text>
+<rect x="566" y="160" width="522" height="510" rx="6" fill="white" stroke="#aeb8c0"/>
+<text x="588" y="196" class="label">Materiali in lokacije</text>
+<text x="588" y="234">Vrsta: lepila · šifra: LEP-01</text>
+<text x="588" y="266">Material: Lepilo za ploščice</text>
+<text x="588" y="298">Enota: kg · cena: 1,50 EUR/kg</text>
+<text x="588" y="330">Lokacija         Količina</text>
+<text x="588" y="362">Skladišče A      180 kg</text>
+<text x="588" y="394">Kombi 1           20 kg</text>
+<text x="588" y="426">Zaloga ni pripisana storitvi.</text>
+<text x="588" y="458">Drugih podjetij ni mogoče izbrati.</text>
+<rect x="586" y="615" width="482" height="36" rx="3" fill="#e6eaed"/>
+<text x="598" y="639" class="action">Dodaj material / Uredi zalogo</text>
+<text x="32" y="733" class="small">Primeri podatkov · obseg in pravice določajo dokumenti 02, 03 in 05.</text>
+</svg>

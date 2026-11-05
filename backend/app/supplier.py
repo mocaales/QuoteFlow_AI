@@ -1,107 +1,136 @@
-"""US-03–US-05: supplier-owned catalog, optional stock, versioned sales rules."""
-from datetime import datetime
+"""Company service catalogue and stocked materials, scoped to active masters."""
 from decimal import Decimal
-from typing import Annotated, Literal
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator, model_validator
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .access import company_member
 
 router = APIRouter(prefix='/podjetja/{company_id}')
 Amount = Annotated[Decimal, Field(ge=0, max_digits=18, decimal_places=4, allow_inf_nan=False)]
-Ratio = Annotated[Decimal, Field(ge=0, lt=1, max_digits=8, decimal_places=6, allow_inf_nan=False)]
+TaxRate = Annotated[Decimal, Field(ge=0, le=1, max_digits=7, decimal_places=6, allow_inf_nan=False)]
 
-class CatalogInput(BaseModel):
+class Input(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    vrsta: Literal['blago', 'storitev']
-    opis: str = Field(min_length=1, max_length=1000)
-    enota: str = Field(min_length=1, max_length=30)
-    cena_na_enoto: Amount
-    strosek_na_enoto: Amount
-    dobavni_rok_dni: int | None = Field(default=None, ge=0, le=3650, strict=True)
-    aktivna: bool = True
 
-    @field_validator('opis', 'enota')
+    @field_validator('*')
     @classmethod
     def nonempty(cls, value):
-        if not value.strip():
-            raise ValueError('Vrednost ne sme biti prazna.')
-        return value.strip()
+        if isinstance(value, str):
+            if not value.strip():
+                raise ValueError('Vrednost ne sme biti prazna.')
+            return value.strip()
+        return value
 
-class StockInput(BaseModel):
-    model_config = ConfigDict(extra='forbid')
-    razpolozljiva_kolicina: Amount
-
-class RulesInput(BaseModel):
-    model_config = ConfigDict(extra='forbid')
-    najmanjsa_marza: Ratio
-    najvecji_popust: Ratio
-    najdaljsi_rok_dni: int = Field(ge=0, le=3650, strict=True)
-    velja_od: AwareDatetime | None = None
-    velja_do: AwareDatetime | None = None
-
-    @model_validator(mode='after')
-    def valid_interval(self):
-        if self.velja_od and self.velja_do and self.velja_do <= self.velja_od:
-            raise ValueError('Konec veljavnosti mora biti po začetku.')
-        return self
+class CatalogInput(Input):
+    naziv: str = Field(min_length=1, max_length=200)
+    opis: str = Field(min_length=1, max_length=1000)
+    vrsta_dela: str = Field(min_length=1, max_length=200)
+    enota: str = Field(min_length=1, max_length=30)
+    cena_na_enoto: Amount
+    stopnja_ddv: TaxRate
+    aktivna: bool = True
 
 class CatalogRow(CatalogInput):
     id: UUID
     podjetje_id: UUID
-    potrjeno_ob: datetime | None
-    razpolozljiva_kolicina: Decimal | None = None
-    zaloga_potrjeno_ob: datetime | None = None
 
-class RulesRow(RulesInput):
+class MaterialKindInput(Input):
+    naziv: str = Field(min_length=1, max_length=200)
+
+class MaterialKindRow(MaterialKindInput):
     id: UUID
     podjetje_id: UUID
-    velja_od: AwareDatetime
 
+class MaterialInput(Input):
+    vrsta_materiala_id: UUID
+    sifra: str = Field(min_length=1, max_length=100)
+    naziv: str = Field(min_length=1, max_length=200)
+    enota: str = Field(min_length=1, max_length=30)
+    cena_na_enoto: Amount
+    aktiven: bool = True
 
-supplier = company_member('ponudnik')
+class MaterialRow(MaterialInput):
+    id: UUID
+
+class StockInput(Input):
+    lokacija: str = Field(min_length=1, max_length=200)
+    kolicina: Amount
+
+class StockRow(StockInput):
+    material_id: UUID
+
+master = company_member('mojster')
 
 @router.get('/cenik', response_model=list[CatalogRow])
-def catalog(company_id: UUID, db=Depends(supplier)):
-    return db.execute('''select c.*,z.razpolozljiva_kolicina,z.potrjeno_ob as zaloga_potrjeno_ob
-        from quoteflow.postavka_cenika c left join quoteflow.zaloga z on z.postavka_cenika_id=c.id
-        where c.podjetje_id=%s order by c.aktivna desc,c.opis,c.id''', (company_id,)).fetchall()
+def catalog(company_id: UUID, db=Depends(master)):
+    return db.execute('''select id,podjetje_id,naziv,opis,vrsta_dela,enota,cena_na_enoto,stopnja_ddv,aktivna
+        from quoteflow.postavka_cenika where podjetje_id=%s order by aktivna desc,naziv,id''', (company_id,)).fetchall()
 
 
 def save(db, company_id, item_id, data):
     return db.execute('select * from quoteflow_private.shrani_cenik(%s,%s,%s,%s,%s,%s,%s,%s,%s)',
-        (company_id, item_id, data.vrsta, data.opis, data.enota, data.cena_na_enoto,
-         data.strosek_na_enoto, data.dobavni_rok_dni, data.aktivna)).fetchone()
+        (company_id, item_id, data.naziv, data.opis, data.vrsta_dela, data.enota,
+         data.cena_na_enoto, data.stopnja_ddv, data.aktivna)).fetchone()
 
 @router.post('/cenik', status_code=201, response_model=CatalogRow)
-def create_item(company_id: UUID, data: CatalogInput, db=Depends(supplier)):
+def create_item(company_id: UUID, data: CatalogInput, db=Depends(master)):
     return save(db, company_id, None, data)
 
 @router.put('/cenik/{item_id}', response_model=CatalogRow)
-def update_item(company_id: UUID, item_id: UUID, data: CatalogInput, db=Depends(supplier)):
+def update_item(company_id: UUID, item_id: UUID, data: CatalogInput, db=Depends(master)):
     return save(db, company_id, item_id, data)
 
-@router.post('/cenik/{item_id}/potrditev', response_model=CatalogRow)
-def confirm_item(company_id: UUID, item_id: UUID, db=Depends(supplier)):
-    return db.execute('select * from quoteflow_private.potrdi_cenik(%s,%s)', (company_id, item_id)).fetchone()
+@router.get('/vrste-materiala', response_model=list[MaterialKindRow])
+def material_kinds(company_id: UUID, db=Depends(master)):
+    return db.execute('select id,podjetje_id,naziv from quoteflow.vrsta_materiala where podjetje_id=%s order by naziv,id', (company_id,)).fetchall()
 
-@router.put('/cenik/{item_id}/zaloga')
-def save_stock(company_id: UUID, item_id: UUID, data: StockInput, db=Depends(supplier)):
-    db.execute('select quoteflow_private.shrani_zalogo(%s,%s,%s)', (company_id, item_id, data.razpolozljiva_kolicina))
+@router.post('/vrste-materiala', status_code=201, response_model=MaterialKindRow)
+def create_material_kind(company_id: UUID, data: MaterialKindInput, db=Depends(master)):
+    return db.execute('select * from quoteflow_private.shrani_vrsto_materiala(%s,%s,%s)', (company_id, None, data.naziv)).fetchone()
+
+@router.put('/vrste-materiala/{kind_id}', response_model=MaterialKindRow)
+def update_material_kind(company_id: UUID, kind_id: UUID, data: MaterialKindInput, db=Depends(master)):
+    return db.execute('select * from quoteflow_private.shrani_vrsto_materiala(%s,%s,%s)', (company_id, kind_id, data.naziv)).fetchone()
+
+@router.get('/materiali', response_model=list[MaterialRow])
+def materials(company_id: UUID, db=Depends(master)):
+    return db.execute('''select m.id,m.vrsta_materiala_id,m.sifra,m.naziv,m.enota,m.cena_na_enoto,m.aktiven
+        from quoteflow.material m join quoteflow.vrsta_materiala v on v.id=m.vrsta_materiala_id
+        where v.podjetje_id=%s order by m.aktiven desc,m.naziv,m.id''', (company_id,)).fetchall()
+
+
+def save_material(db, company_id, material_id, data):
+    return db.execute('select * from quoteflow_private.shrani_material(%s,%s,%s,%s,%s,%s,%s,%s)',
+        (company_id, material_id, data.vrsta_materiala_id, data.sifra, data.naziv, data.enota, data.cena_na_enoto, data.aktiven)).fetchone()
+
+@router.post('/materiali', status_code=201, response_model=MaterialRow)
+def create_material(company_id: UUID, data: MaterialInput, db=Depends(master)):
+    return save_material(db, company_id, None, data)
+
+@router.put('/materiali/{material_id}', response_model=MaterialRow)
+def update_material(company_id: UUID, material_id: UUID, data: MaterialInput, db=Depends(master)):
+    return save_material(db, company_id, material_id, data)
+
+@router.get('/materiali/{material_id}/zaloga', response_model=list[StockRow])
+def stocks(company_id: UUID, material_id: UUID, db=Depends(master)):
+    material = db.execute('''select m.id from quoteflow.material m
+        join quoteflow.vrsta_materiala v on v.id=m.vrsta_materiala_id
+        where m.id=%s and v.podjetje_id=%s''', (material_id, company_id)).fetchone()
+    if material is None:
+        raise HTTPException(404, 'Material ni na voljo.')
+    return db.execute('''select z.material_id,z.lokacija,z.kolicina from quoteflow.zaloga z
+        join quoteflow.material m on m.id=z.material_id join quoteflow.vrsta_materiala v on v.id=m.vrsta_materiala_id
+        where v.podjetje_id=%s and m.id=%s order by z.lokacija''', (company_id, material_id)).fetchall()
+
+@router.put('/materiali/{material_id}/zaloga')
+def save_stock(company_id: UUID, material_id: UUID, data: StockInput, db=Depends(master)):
+    db.execute('select quoteflow_private.shrani_zalogo(%s,%s,%s,%s)', (company_id, material_id, data.lokacija, data.kolicina))
     return {'status': 'ok'}
 
-@router.delete('/cenik/{item_id}/zaloga')
-def remove_stock(company_id: UUID, item_id: UUID, db=Depends(supplier)):
-    db.execute('select quoteflow_private.shrani_zalogo(%s,%s,null)', (company_id, item_id))
+@router.delete('/materiali/{material_id}/zaloga')
+def remove_stock(company_id: UUID, material_id: UUID, lokacija: str = Query(min_length=1, max_length=200), db=Depends(master)):
+    db.execute('select quoteflow_private.odstrani_zalogo(%s,%s,%s)', (company_id, material_id, lokacija))
     return {'status': 'ok'}
-
-@router.get('/pravila', response_model=list[RulesRow])
-def rules(company_id: UUID, db=Depends(supplier)):
-    return db.execute('select * from quoteflow.pravila_ponudnika where podjetje_id=%s order by velja_od desc,id', (company_id,)).fetchall()
-
-@router.post('/pravila', status_code=201, response_model=RulesRow)
-def create_rules(company_id: UUID, data: RulesInput, db=Depends(supplier)):
-    return db.execute('select * from quoteflow_private.nova_pravila(%s,%s,%s,%s,%s,%s)',
-        (company_id, data.najmanjsa_marza, data.najvecji_popust, data.najdaljsi_rok_dni, data.velja_od, data.velja_do)).fetchone()

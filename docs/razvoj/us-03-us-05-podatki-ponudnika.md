@@ -1,5 +1,8 @@
 # US-03–US-05: podatki ponudnika
 
+> **Zgodovinski razvojni zapis:** novi primarni model in stanje uvedbe sta v [podatkovni-model.md](podatkovni-model.md). Opisi starih vlog, RFQ, cenika in pravil spodaj ne določajo nove sheme. Oznake US spodaj ohranijo stari pomen; veljavna sta novi [obseg](../02-funkcionalnosti-in-obseg.md) in [uporabniške zgodbe](../05-uporabniske-zgodbe.md).
+
+
 ## Obseg in uporaba
 
 Uporabnik v glavi izbere aktivno podjetje. Ponudnik pri tem podjetju dobi poglede **Cenik**, **Zaloge** in **Prodajna pravila**. Administrator brez poslovne vloge ponudnika do internih podatkov nima dostopa.

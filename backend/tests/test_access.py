@@ -31,6 +31,13 @@ def test_admin_routes_require_administrator():
         assert administrator in deps, path
 
 def test_company_member_guard_is_built_once_per_role():
-    assert company_member('ponudnik') is company_member('ponudnik')
-    assert company_member('ponudnik').company_role=='ponudnik'
-    assert company_member('nabavnik').company_role=='nabavnik'
+    assert company_member('mojster') is company_member('mojster')
+    assert company_member('mojster').company_role=='mojster'
+    assert company_member('delavec').company_role=='delavec'
+
+
+def test_company_routes_require_master_and_no_legacy_rules_endpoints():
+    scoped = [(p, d) for p, d in ROUTES if p.startswith('/api/podjetja/{company_id}/')]
+    for path, deps in scoped:
+        assert any(getattr(c, 'company_role', None) == 'mojster' for c in deps), path
+    assert not any('/pravila' in path or '/potrditev' in path for path, _ in ROUTES)

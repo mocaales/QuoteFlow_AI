@@ -49,9 +49,9 @@ describe('US-02 administracija', () => {
  it('odvzem vloge prikaže šele po uspešnem shranjevanju in osvežitvi podatkov', async () => {
   let active = true;
   mockedApi.mockImplementation(async (_client, path, method) => {
-   if (path === '/podjetja') return [{ id: 'c', naziv: 'Podjetje A', stanje: 'aktivno' }];
+   if (path === '/podjetja') return [{ id: 'c', naziv: 'Podjetje A', aktivno: true }];
    if (path === '/admin/uporabniki') return [{ id: 'u', e_posta: 'user@example.test' }];
-   if (path === '/admin/vloge') return [{ id: 'r', uporabnik_id: 'u', e_posta: 'user@example.test', podjetje_id: 'c', naziv: 'Podjetje A', vloga: 'nabavnik', aktivna: active }];
+   if (path === '/admin/vloge') return [{ id: 'r', uporabnik_id: 'u', e_posta: 'user@example.test', podjetje_id: 'c', naziv: 'Podjetje A', vloga: 'delavec', aktivna: active }];
    if (path === '/admin/vloge/r' && method === 'PATCH') { active = false; return {}; }
    return {};
   });
@@ -63,11 +63,14 @@ describe('US-02 administracija', () => {
  it('ne prikaže lažnega uspeha, če shranjevanje podjetja ni dovoljeno', async () => {
   mockedApi.mockImplementation(async (_client, path, method) => {
    if (method === 'POST') throw new Error('Za to dejanje nimate pravice.');
-   return [];
+   return path === '/admin/uporabniki' ? [{id:'u',e_posta:'u@example.test',ime:'Ana',priimek:'Novak'}] : [];
   });
   render(<Admin client={client}/>);
   await waitFor(() => expect(screen.queryByText('Nalagam podatke …')).toBeNull());
   await userEvent.type(screen.getByLabelText('Naziv podjetja'), 'Novo podjetje');
+  await userEvent.selectOptions(screen.getByLabelText('Lastnik podjetja'),'u');
+  await userEvent.type(screen.getByLabelText('Matična številka'),'1234567');
+  await userEvent.type(screen.getByLabelText('Naslov podjetja'),'Naslov 1');
   await userEvent.click(screen.getByRole('button', { name: 'Dodaj podjetje' }));
   expect((await screen.findByRole('alert')).textContent).toContain('nimate pravice');
   expect(screen.queryByText('Podjetje je shranjeno.')).toBeNull();

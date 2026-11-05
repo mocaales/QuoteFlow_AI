@@ -1,8 +1,10 @@
 # Ena ponudba za par RFQ–ponudnik skozi celoten potek
 
-- **Status:** sprejeto
+- **Status:** nadomeščeno z [ADR-0010](0010-projekti-podjetja-in-vec-vlog.md)
 - **Datum:** 2026-10-20
 - **Izvedba:** delna; enotna tabela ponudba je uvedena, uporabniški postopek ponudb sledi v naslednjih sklopih
+
+> Zgodovinska odločitev za prejšnji model. Ne opisuje trenutne sheme.
 
 ## Kontekst in problem
 

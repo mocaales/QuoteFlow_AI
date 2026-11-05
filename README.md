@@ -1,6 +1,12 @@
 # QuoteFlow AI
 
-Večpodjetniška B2B spletna aplikacija za povpraševanja (RFQ) in ponudbe. Nabavnik izbere ponudnike ročno ali samodejno; AI pomaga pripraviti osnutek, ponudnik pa ga pred prikazom nabavniku izrecno odobri.
+Večpodjetniška spletna aplikacija za vodenje projektov, ekip, cenika, materialov, ponudb in računov. Uporabnik lahko nastopa kot stranka ter kot mojster ali delavec pri različnih podjetjih.
+
+**Izvedeno:** nova relacijska shema je uvedena v Supabase. Delujejo registracija/prijava, nove vloge, administratorsko upravljanje uporabnikov in podjetij z lastnikom ter cenik storitev, materiali in zaloga po lokacijah.
+
+**Naslednji razvoj:** uporabniški postopki za prošnje mojstrov, projekte, ekipe, ponudbe in račune. Baza že vsebuje njihove omejitve in transakcijske postopke; API in vmesnik celotnega življenjskega cikla še nista uvedena. [Stanje razvoja](docs/razvoj/podatkovni-model.md).
+
+**Načrtovani obseg:** [22 funkcionalnosti, od tega 7 MVP, in 5 možnih nadgradenj](docs/02-funkcionalnosti-in-obseg.md). AI-pomoč pri analizi projekta, pripravi in pregledu osnutkov ter povzetkih je načrtovana po MVP (F16–F20) in še ni izvedena.
 
 **Tehnologije:** React, TypeScript, Vite · Python, FastAPI · Supabase PostgreSQL in Supabase Auth.
 
@@ -63,6 +69,7 @@ docker compose down
 - [Uporabniške zgodbe](docs/05-uporabniske-zgodbe.md)
 - [Wireframi](docs/06-wireframes.md)
 - [Arhitekturne odločitve](docs/adr/)
-- [Razvoj US-01–US-02: identiteta in pravice](docs/razvoj/us-01-us-02-identiteta-in-pravice.md)
+- [Uvedba novega podatkovnega modela](docs/razvoj/podatkovni-model.md)
+- [Zgodovina US-01–US-02: identiteta in pravice](docs/razvoj/us-01-us-02-identiteta-in-pravice.md)
 - [Organizacija frontenda](docs/razvoj/frontend-arhitektura.md)
-- [Razvoj US-03–US-05: podatki ponudnika](docs/razvoj/us-03-us-05-podatki-ponudnika.md)
+- [Zgodovina US-03–US-05: podatki ponudnika](docs/razvoj/us-03-us-05-podatki-ponudnika.md)

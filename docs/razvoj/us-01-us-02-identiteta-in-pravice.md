@@ -1,5 +1,8 @@
 # US-01–US-02: identiteta in pravice
 
+> **Zgodovinski razvojni zapis:** novi primarni model in stanje uvedbe sta v [podatkovni-model.md](podatkovni-model.md). Opisi starih vlog, RFQ, cenika in pravil spodaj ne določajo nove sheme. Oznake US spodaj ohranijo stari pomen; veljavna sta novi [obseg](../02-funkcionalnosti-in-obseg.md) in [uporabniške zgodbe](../05-uporabniske-zgodbe.md).
+
+
 Registracija, prijava in odjava uporabljajo Supabase Auth. Frontend hrani sejo v `sessionStorage`, API pa pri vsakem poslovnem zahtevku preveri žeton pri Auth ter aktivnost pripadajoče seje v bazi. Po odjavi stari žeton ne omogoča poslovnega dostopa. Vloge iz uporabniških metapodatkov se ne upoštevajo.
 
 Poslovne vloge so v `quoteflow.vloga_uporabnika`. Nabavnik in ponudnik potrebujeta podjetje; administrator je globalen. Odvzem vloge ali deaktivacija podjetja učinkuje na naslednji zahtevek. Administratorska vloga sama ne omogoča vpogleda v interne kalkulacije ali odobritve ponudb.

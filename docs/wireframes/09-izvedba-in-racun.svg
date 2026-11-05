@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="760" viewBox="0 0 1120 760" role="img" aria-labelledby="title desc">
+<title id="title">Termin, izvedba in obračun</title><desc id="desc">Načrtovani žični model; vloga mojster · Gradnje Primer. Ne predstavlja izvedenega zaslona.</desc>
+<style>text{font-family:Arial,sans-serif;fill:#243039;font-size:16px}.title{font-size:28px;font-weight:700}.label{font-size:19px;font-weight:700}.small{font-size:14px;fill:#52616b}.action{font-weight:700}</style>
+<rect width="1120" height="760" fill="#f5f6f7"/>
+<rect width="1120" height="78" fill="#e6eaed"/>
+<text x="32" y="36" class="label">QuoteFlow AI</text>
+<text x="32" y="61" class="small">Žični model · mojster · Gradnje Primer · načrtovano</text>
+<text x="32" y="126" class="title">Termin, izvedba in obračun</text>
+<rect x="32" y="160" width="510" height="510" rx="6" fill="white" stroke="#aeb8c0"/>
+<text x="54" y="196" class="label">Potek projekta</text>
+<text x="54" y="234">Sprejeta ponudba: P-001 / 1</text>
+<text x="54" y="266">Faza: termin → izvedba → obračun</text>
+<text x="54" y="298">Termin od: 12. 11. 2026, 08:00</text>
+<text x="54" y="330">Termin do: 12. 11. 2026, 16:00</text>
+<text x="54" y="362">[Shrani termin]</text>
+<text x="54" y="394">Izvedba zaključena: še ne</text>
+<text x="54" y="426">[Potrdi konec izvedbe]</text>
+<text x="54" y="458">Dejanja so dovoljena glede na fazo.</text>
+<rect x="52" y="615" width="470" height="36" rx="3" fill="#e6eaed"/>
+<text x="64" y="639" class="action">Odpri projekt</text>
+<rect x="566" y="160" width="522" height="510" rx="6" fill="white" stroke="#aeb8c0"/>
+<text x="588" y="196" class="label">Račun R-001</text>
+<text x="588" y="234">Vir: sprejeta ponudba P-001 / 1</text>
+<text x="588" y="266">Ob sprejemu: osnutek</text>
+<text x="588" y="298">Po koncu izvedbe: izdaja in pošiljanje</text>
+<text x="588" y="330">Znesek: 988,20 EUR</text>
+<text x="588" y="362">Plačilo: neplačan / plačan</text>
+<text x="588" y="394">[Izdaj in pošlji v aplikaciji]</text>
+<text x="588" y="426">[Evidentiraj celotno plačilo]</text>
+<text x="588" y="458">Celotno plačilo → projekt zaključen.</text>
+<rect x="586" y="615" width="482" height="36" rx="3" fill="#e6eaed"/>
+<text x="598" y="639" class="action">Izdani zneski se ne spreminjajo</text>
+<text x="32" y="733" class="small">Primeri podatkov · obseg in pravice določajo dokumenti 02, 03 in 05.</text>
+</svg>

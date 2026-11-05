@@ -14,8 +14,8 @@ const session = { access_token: 'token', user: { email: 'nina@example.test' } } 
 beforeEach(() => {
  vi.clearAllMocks();
  mockedApi.mockImplementation(async (_client, path) => path === '/me'
-  ? { id: 'u', e_posta: 'nina@example.test', vloge: [{ id: 'r', podjetje_id: 'a', vloga: 'ponudnik', naziv: 'Ležajna tehnika d.o.o.' }] }
-  : path === '/podjetja' ? [{ id: 'a', naziv: 'Ležajna tehnika d.o.o.', stanje: 'aktivno' }] : []);
+  ? { id: 'u', e_posta: 'nina@example.test', vloge: [{ id: 'r', podjetje_id: 'a', vloga: 'mojster', naziv: 'Ležajna tehnika d.o.o.' }] }
+  : path === '/podjetja' ? [{ id: 'a', naziv: 'Ležajna tehnika d.o.o.', aktivno: true }] : []);
 });
 
 describe('Okvir delovnega prostora', () => {

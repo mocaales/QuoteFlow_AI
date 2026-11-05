@@ -1,255 +1,342 @@
 # Uporabniške zgodbe
 
+Zgodbe sledijo [potrjenemu obsegu](02-funkcionalnosti-in-obseg.md): **US-01–US-22** pokrivajo 22 predvidenih funkcionalnosti, **US-23–US-27** pa pet možnih nadgradenj. **US-01–US-07 so MVP.** Oznaka US-xx se v tem dokumentu preslika v Fx; označuje načrtovano vedenje, ne potrjene izvedbe.
+
+Novi pomen oznak nadomešča stari obseg RFQ. Zgodovinski razvojni zapisi in obstoječe GitHub naloge ohranijo prvotni pomen; brez izrecne uskladitve niso dokaz izvedbe spodnjih zgodb. Dostop in izračuni upoštevajo [podatkovni model](03-podatkovni-model.md). Poznejše funkcionalnosti lahko zahtevajo njegove razširitve.
+
 ## MVP
 
-### US-01 — Registracija in prijava
+### US-01 — Identiteta, pravice in prošnja mojstra
 
-- **Funkcionalnost:** F1 · Registracija in prijava.
-- **Vloga:** uporabnik.
-- **Zgodba:** Kot novi uporabnik želim ustvariti račun in se prijaviti, da lahko uporabljam pravice, ki mi jih dodeli administrator.
-- **Merila sprejema:**
-  1. Registracija z novo e-pošto ustvari račun; z že uporabljeno e-pošto ne ustvari drugega.
-  2. Pravilna prijava odpre uporabnikovo sejo; napačni prijavni podatki je ne odprejo.
-  3. Registriran uporabnik brez aktivne poslovne vloge ne vidi podatkov podjetij in ne more oddati RFQ ali odobriti ponudbe.
-  4. Neprijavljen uporabnik ne more dostopati do poslovnih podatkov.
+**Funkcionalnost:** F1 · **Vloga:** stranka ali delavec.
 
-### US-02 — Podjetja in dodelitev pravic
+Kot stranka ali delavec želim uporabljati svoj račun in zaprositi za status mojstra s podatki podjetja, da lahko vodim svoje podjetje po odobritvi.
 
-- **Funkcionalnost:** F1 · Podjetja in pravice.
-- **Vloga:** administrator.
-- **Zgodba:** Kot administrator želim upravljati podjetja in uporabnikom dodeliti poslovne vloge, da lahko delujejo samo za pooblaščena podjetja.
-- **Merila sprejema:**
-  1. Administrator lahko podjetje ustvari, popravi njegove podatke in ga deaktivira; deaktivirano podjetje ni na voljo za nove RFQ ali povabila.
-  2. Obstoječemu uporabniku lahko dodeli ali odvzame vlogo nabavnika oziroma ponudnika za določeno podjetje; enake dodelitve ni mogoče podvojiti.
-  3. Po odvzemu vloge uporabnik ne more več izvajati poslovnih dejanj za to podjetje, tudi če ponovno uporabi stari URL.
-  4. Globalna vloga administratorja sama po sebi ne dovoljuje odobritve ponudbe.
+**Merila sprejema:**
 
-### US-03 — Potrjen cenik
+1. Potrjena registracija ustvari globalno vlogo `stranka`; napačna prijava ne odpre seje, odjava pa prepreči nadaljnje poslovne zahtevke s to sejo.
+2. Prošnjo je mogoče oddati s podatki podjetja iz modela; manjkajoča obvezna polja preprečijo oddajo.
+3. Adminova odobritev v eni transakciji ustvari podjetje, lastništvo in aktivno dodelitev `mojster`; zavrnitev ne ustvari nobenega od teh zapisov.
+4. Admin lahko upravlja dodelitve pravic; odvzem velja pri naslednjem poslovnem zahtevku. Lastniku ni mogoče odvzeti edine veljavne dodelitve mojstra njegovega podjetja.
+5. Mojster podjetja A, ki je delavec podjetja B, ne more z mojstrskimi pravicami urejati B. Globalni admin brez poslovne dodelitve ne more poslati ponudbe ali odločiti namesto stranke.
 
-- **Funkcionalnost:** F2 · Postavke cenika.
-- **Vloga:** ponudnik.
-- **Zgodba:** Kot ponudnik želim vnesti in potrditi postavke cenika svojega podjetja, da agent uporablja veljavne cene blaga in storitev.
-- **Merila sprejema:**
-  1. Ponudnik lahko vnese blago ali storitev z opisom, enoto, ceno, stroškom in morebitnim dobavnim rokom.
-  2. Potrditev postavke zabeleži čas `potrjeno_ob`; neaktivne ali nepotrjene postavke agent ne uporabi.
-  3. Ponudnik lahko postavko deaktivira, ne da bi izbrisal že odobrene ponudbe, ki so jo uporabile.
-  4. Postavk cenika drugega podjetja ne more brati ali spreminjati.
+### US-02 — Cenik in materiali
 
-### US-04 — Zaloga blaga
+**Funkcionalnost:** F2 · **Vloga:** mojster.
 
-- **Funkcionalnost:** F2 · Morebitna zaloga.
-- **Vloga:** ponudnik.
-- **Zgodba:** Kot ponudnik želim potrditi razpoložljivo zalogo blaga, da sistem pri pripravi osnutka preveri zahtevano količino.
-- **Merila sprejema:**
-  1. Za postavko vrste blago lahko ponudnik vnese nenegativno razpoložljivo količino; potrditev zabeleži čas preverjanja.
-  2. Za postavko vrste storitev zapisa zaloge ni mogoče ustvariti.
-  3. Če ponudnik za blago vodi zalogo, sistem ne označi nepokrite zahtevane količine kot preverjene zaloge.
-  4. Zaloge drugega podjetja ponudnik ne more brati ali spreminjati.
+Kot mojster želim urejati cenik ter materiale in zalogo svojega podjetja, da lahko ponovno uporabim podatke pri pripravi ponudbe.
 
-### US-05 — Prodajna pravila
+**Merila sprejema:**
 
-- **Funkcionalnost:** F2 · Pravila ponudnika.
-- **Vloga:** ponudnik.
-- **Zgodba:** Kot ponudnik želim določiti veljavna prodajna pravila svojega podjetja, da predlogi ne presežejo dovoljenega popusta in roka ali kršijo marže.
-- **Merila sprejema:**
-  1. Nova različica pravil vsebuje najmanjšo maržo, največji popust, najdaljši dobavni rok in začetek veljavnosti.
-  2. Za eno podjetje in isti trenutek velja največ ena različica pravil.
-  3. Ponudnik ne more spremeniti pravil drugega podjetja; osnutek in odobritev uporabljata pravila istega podjetja kot ponudba.
+1. Postavka cenika shrani naziv, opis, vrsto dela, enoto, nenegativno ceno in stopnjo DDV; neveljavne vrednosti so zavrnjene.
+2. Material ima vrsto, šifro, naziv, enoto in ceno; isti material ima lahko ločeno nenegativno količino na več lokacijah.
+3. Postavka cenika je veljavna brez materialne sestave; če je sestava dodana, vsebuje samo materiale istega podjetja s pozitivno količino na enoto dela.
+4. Zahtevek z identifikatorjem cenika, materiala ali zaloge drugega podjetja ne omogoči branja ali spremembe tega zapisa.
 
-### US-06 — Oddaja povpraševanja
+### US-03 — Začetek projekta
 
-- **Funkcionalnost:** F3 · RFQ s postavkami in dobavnimi zahtevami.
-- **Vloga:** nabavnik.
-- **Zgodba:** Kot nabavnik želim oddati RFQ za svoje podjetje, da ponudniki prejmejo enako opisane zahteve.
-- **Merila sprejema:**
-  1. Osnutek lahko vsebuje več postavk, vsako z opisom, pozitivno količino in enoto, ter kraj in želeni datum dobave.
-  2. RFQ brez vsaj ene veljavne postavke ni mogoče oddati; obrazec označi neveljavna polja.
-  3. Ob oddaji sistem zapiše `oddano_ob`; določeni `rok_za_ponudbe` mora biti poznejši od oddaje.
-  4. Nabavnik vidi stanje in postavke RFQ svojega podjetja, ne pa RFQ drugih podjetij.
+**Funkcionalnost:** F3 · **Vloga:** mojster.
 
-### US-07 — Ročna izbira ponudnikov
+Kot mojster želim ustvariti projekt za stranko in opisati predvideno delo, da lahko vodim pregled zahteve in morebitni ogled.
 
-- **Funkcionalnost:** F4 · Ročna izbira.
-- **Vloga:** nabavnik.
-- **Zgodba:** Kot nabavnik želim sam izbrati registrirane ponudnike, da povpraševanje prejmejo podjetja, s katerimi želim sodelovati.
-- **Merila sprejema:**
-  1. Nabavnik lahko izbere eno ali več aktivnih registriranih podjetij, ne pa svojega podjetja.
-  2. Po potrditvi nastane za vsako izbrano podjetje največ ena ponudba v stanju `povabljena` za isti RFQ.
-  3. Ponovljena potrditev ne ustvari dvojnika; izvor izbire je `rocna`, razlog pa »izbral nabavnik«.
-  4. Nabavnik vidi seznam izbranih podjetij, ne pa njihovih internih cen ali pravil.
+**Merila sprejema:**
 
-### US-08 — Samodejna izbira ponudnikov
+1. Projekt z nazivom, opisom in lokacijo pripada izbranemu lastnemu podjetju in obstoječemu uporabniku z aktivno vlogo `stranka`; začne v fazi `pregled`.
+2. Mojster lahko uvede fazo `ogled` ali jo preskoči; brez poslane ponudbe ne more ročno nastaviti faze `ponudba`.
+3. Stranka vidi samo svoje projekte; drug mojster brez dodelitve pri podjetju projekta ne more odpreti ali urejati.
 
-- **Funkcionalnost:** F4 · Samodejna izbira.
-- **Vloga:** nabavnik.
-- **Zgodba:** Kot nabavnik želim dobiti sistemski izbor registriranih ponudnikov z razlogom ujemanja, da lahko RFQ pošljem primernim podjetjem.
-- **Merila sprejema:**
-  1. Sistem predlaga aktivna registrirana podjetja z ujemajočimi se aktivnimi, potrjenimi postavkami cenika.
-  2. Pri vsakem predlogu pokaže razlog izbire; spletno odkritih in neregistriranih podjetij ne vključuje.
-  3. Po potrditvi ustvari največ eno ponudbo v stanju `povabljena` za par RFQ–podjetje in shrani samodejni izvor ter razlog.
-  4. Če ujemanja ni, to pove in ne ustvari praznega povabila.
+### US-04 — Priprava ponudbe
 
-### US-09 — Razumevanje RFQ
+**Funkcionalnost:** F4 · **Vloga:** mojster.
 
-- **Funkcionalnost:** F5 · AI-analiza zahtev.
-- **Vloga:** ponudnik.
-- **Zgodba:** Kot ponudnik želim videti agentov predlog razumevanja RFQ, da lahko preverim ujemanje s ponudbo svojega podjetja.
-- **Merila sprejema:**
-  1. Agent iz opisa RFQ vrne strukturiran predlog zahtevanih postavk, količin in enot.
-  2. Za posameznega ponudnika predlaga samo postavke njegovega aktivnega, potrjenega cenika.
-  3. Dvoumno ujemanje ali manjkajoč podatek označi za ročni pregled; agent ne izmisli cene, stroška ali zaloge.
-  4. Ponudnik ne vidi predloga ali podatkov cenika drugega podjetja.
+Kot mojster želim sestaviti ponudbo iz cenika ali ročnih postavk, da dobim preverljiv izračun pred pošiljanjem.
 
-### US-10 — Izračunan osnutek
+**Merila sprejema:**
 
-- **Funkcionalnost:** F5 · Ločen osnutek in deterministična preverjanja.
-- **Vloga:** ponudnik.
-- **Zgodba:** Kot ponudnik želim dobiti izračunan osnutek za svoje povabilo, da lahko pred odobritvijo vidim cene in morebitne kršitve pravil.
-- **Merila sprejema:**
-  1. Za vsako povabljeno podjetje nastane ločen osnutek za isti RFQ; njegovi viri pripadajo temu podjetju.
-  2. Programska logika preveri ceno, strošek, maržo, popust, dobavni rok in morebitno zalogo glede na veljavna pravila.
-  3. Ob manjkajočem viru ali kršitvi osnutek navede konkretno težavo in zahteva ročni pregled; sistem ne ugiba vrednosti.
-  4. Nabavnik osnutka ne vidi in agent ga ne more odobriti.
+1. Osnutek vsebuje postavke z nazivom, opisom, vrsto dela, enoto, ceno, pozitivno količino, popustom in DDV; neveljavne vrednosti so zavrnjene.
+2. Za 2 enoti po 100 EUR, 10 % popusta in 22 % DDV sistem izračuna 180 EUR neto, 39,60 EUR DDV in 219,60 EUR končne cene po pravilih iz dokumenta 03.
+3. Prenos iz cenika kopira ceno in materialno sestavo; poznejša sprememba cenika ali materiala ne spremeni teh podatkov ponudbe.
+4. Materialna sestava se ne prišteje še enkrat k prodajni ceni dela; osnutek pred pošiljanjem ni viden stranki.
 
-### US-11 — Popravek osnutka
+### US-05 — Pošiljanje in odločitev o ponudbi
 
-- **Funkcionalnost:** F6 · Pregled in popravek.
-- **Vloga:** ponudnik.
-- **Zgodba:** Kot ponudnik želim popraviti postavke svojega osnutka, da lahko pred odločitvijo odpravim napake ali dopolnim manjkajoče podatke.
-- **Merila sprejema:**
-  1. Aktivni ponudnik vidi le osnutke svojega podjetja z njihovimi postavkami in opozorili.
-  2. Lahko spremeni količino, ceno, strošek ali popust ter shrani popravek le v stanju `osnutek` ali `v_pregledu`.
-  3. Po shranjenem popravku sistem ponovno izračuna zneske in preveri maržo, popust, rok in morebitno zalogo.
-  4. Shranjevanje popravka samo po sebi ne odobri ponudbe in je ne pokaže nabavniku.
+**Funkcionalnost:** F5 · **Vloga:** stranka.
 
-### US-12 — Odobritev ali zavrnitev
+Kot stranka želim prejeti ponudbo v aplikaciji in jo sprejeti ali zavrniti, da lahko odločim o predlaganem poslu.
 
-- **Funkcionalnost:** F6 · Izrecna odločitev ponudnika.
-- **Vloga:** ponudnik.
-- **Zgodba:** Kot ponudnik želim osnutek izrecno odobriti ali zavrniti, da v imenu podjetja nadzorujem izdajo ponudbe.
-- **Merila sprejema:**
-  1. Odločitev lahko sprejme le uporabnik z aktivno vlogo ponudnika pri podjetju te ponudbe.
-  2. Pred odobritvijo sistem znova preveri popolnost postavk, cene, stroške, maržo, popust, rok in morebitno zalogo; ob kršitvi pokaže razlog in odobritev zavrne.
-  3. Izrecni »Odobri« po uspešnem preverjanju nastavi `odobrena`; »Zavrni« nastavi `zavrnjena` in ponudbe ne objavi nabavniku.
-  4. Ob odobritvi sistem zabeleži odobriteljevo vlogo in čas; agent tega dejanja ne more izvesti.
+**Merila sprejema:**
 
-### US-13 — Vidnost odobrene ponudbe
+1. Mojster pošlje veljaven osnutek; stranka projekta nato vidi poslano različico s postavkami, zneski in možnostjo sprejema ali zavrnitve.
+2. Odloči lahko samo stranka tega projekta in samo o poslani ponudbi; največ ena različica v projektu je lahko sprejeta.
+3. Poslane vsebine ni mogoče spremeniti. Popravek ustvari novo različico; zavrnitev ohrani zavrnjeni dokument in omogoči pripravo novega.
 
-- **Funkcionalnost:** F7 · Odobrena ponudba, sledljivost in zaklep.
-- **Vloga:** nabavnik.
-- **Zgodba:** Kot nabavnik želim videti le odobrene ponudbe za svoj RFQ, da odločam na podlagi veljavnih podatkov brez vpogleda v ponudnikove interne stroške.
-- **Merila sprejema:**
-  1. Kupec za svoj RFQ vidi le ponudbe v stanju `odobrena`; povabila, osnutki in zavrnitve niso prikazani kot prejete ponudbe.
-  2. Odobrena ponudba pokaže ponudnika, postavke, cene, skupni znesek, valuto, dobavni rok in čas odobritve, ne pa stroškov ali marž.
-  3. Ob odobritvi se zabeležijo odobriteljeva vloga, čas in različica; odobrena ponudba s postavkami se zaklene.
-  4. Uporabnik, ki ne pripada kupcu ali ponudniku te ponudbe, je ne more pridobiti s spremembo URL-ja ali identifikatorja.
+### US-06 — Termin in izvedba
 
-## Predvidene poznejše funkcionalnosti
+**Funkcionalnost:** F6 · **Vloga:** mojster.
 
-### US-14 — Primerjava ponudb
+Kot mojster želim določiti termin sprejetega dela in evidentirati zaključek izvedbe, da projekt napreduje samo ob izpolnjenih pogojih.
 
-- **Funkcionalnost:** F8 · Primerjava odobrenih ponudb.
-- **Vloga:** nabavnik.
-- **Zgodba:** Kot nabavnik želim primerjati odobrene ponudbe za isti RFQ, da lahko ocenim ceno in dobavne pogoje.
-- **Merila sprejema:**
-  1. Primerjava vsebuje le odobrene ponudbe za RFQ kupčevega podjetja.
-  2. Prikazani so vsaj ponudnik, skupni znesek, valuta in dobavni rok vsake ponudbe.
-  3. Pri manj kot dveh odobrenih ponudbah sistem pove, da primerjava še ni mogoča; ponudb v različnih valutah brez pretvorbe ne razvršča po znesku.
-  4. Interni stroški in marže niso v prikazu ali njegovem podatkovnem odgovoru.
+**Merila sprejema:**
 
-### US-15 — Izvoz ponudbe
+1. Sprejem ponudbe prestavi projekt v `termin`; terminov izvedbe ni mogoče potrditi za projekt brez sprejete ponudbe.
+2. Za veljaven termin velja `termin_do > termin_od`; njegov vnos prestavi projekt v `izvedba`, stranka pa vidi dogovorjeni termin.
+3. Vnos termina ne označi dela kot opravljenega. Mojster mora zaključek izvedbe evidentirati posebej, preskok neposredno v plačan oziroma zaključen projekt pa je zavrnjen.
 
-- **Funkcionalnost:** F9 · PDF odobrene ponudbe.
-- **Vloga:** nabavnik.
-- **Zgodba:** Kot nabavnik želim prenesti odobreno ponudbo v PDF, da jo lahko shranim v svojem podjetju.
-- **Merila sprejema:**
-  1. Izvoz je na voljo samo za odobreno ponudbo RFQ kupčevega podjetja.
-  2. PDF vsebuje identifikator ponudbe, ponudnika, postavke, cene, skupni znesek, valuto in datum odobritve.
-  3. PDF ne vsebuje internih stroškov, marž, pravil ali podatkov drugih podjetij.
-  4. Zahteva za tuj ali neodobren zapis ne vrne dokumenta.
+### US-07 — Račun in plačilo
 
-### US-16 — Obvestilo ponudniku
+**Funkcionalnost:** F7 · **Vloga:** mojster.
 
-- **Funkcionalnost:** F10 · Obvestilo o novem osnutku.
-- **Vloga:** ponudnik.
-- **Zgodba:** Kot ponudnik želim izvedeti, da je za moje podjetje pripravljen osnutek, da ga lahko pregledam.
-- **Merila sprejema:**
-  1. Ob nastanku osnutka sistem obvesti določeni aktivni kontakt ponudnika; če ta ni določen, obvesti aktivne ponudnike povabljenega podjetja.
-  2. Obvestilo v aplikaciji vsebuje povezavo do ponudbe in stanje prebranosti.
-  3. E-pošta vsebuje povezavo do aplikacije, ne pa internih cen ali stroškov.
-  4. Ponovna obdelava istega dogodka ne ustvari dvojnika; neuspešna dostava ostane označena za ponovni poskus.
+Kot mojster želim izdati račun za sprejeto ponudbo ter evidentirati celotno plačilo, da lahko zaključim izvedeni projekt.
 
-### US-17 — Obvestilo nabavniku
+**Merila sprejema:**
 
-- **Funkcionalnost:** F10 · Obvestilo o odobreni ponudbi.
-- **Vloga:** nabavnik.
-- **Zgodba:** Kot nabavnik želim izvedeti, da je ponudnik odobril ponudbo za moj RFQ, da jo lahko odprem.
-- **Merila sprejema:**
-  1. Ob odobritvi se obvestilo ustvari le za aktivne nabavnike podjetja, ki je oddalo RFQ.
-  2. Obvestilo v aplikaciji in e-pošta vsebujeta povezavo do odobrene ponudbe.
-  3. Obvestilo ne razkrije internih stroškov ponudnika in ni poslano drugemu kupčevemu podjetju.
-  4. Ponovna obdelava iste odobritve ne povzroči podvojenega pošiljanja.
+1. Sprejem ponudbe v isti transakciji ustvari osnutek računa; za isto sprejeto ponudbo ni mogoče ustvariti drugega računa.
+2. Pred evidentirano končano izvedbo računa ni mogoče izdati. Izdaja in pošiljanje v aplikaciji omogočita stranki pregled ter uvedeta fazo `obracun`.
+3. Zneski računa izhajajo iz sprejete nespremenljive ponudbe; izdani račun vsebuje številko, podatke izdajatelja in prejemnika ter datum izdaje.
+4. Mojster lahko pri izdanem računu evidentira samo celotno plačilo: zapiše se `placano_ob` in projekt se zaključi. Delnega plačila ali plačila osnutka sistem ne sprejme.
 
-### US-18 — Zgodovina različic
+## Poznejši razvoj
 
-- **Funkcionalnost:** F11 · Spremembe ponudbe in odločitve.
-- **Vloga:** ponudnik.
-- **Zgodba:** Kot ponudnik želim videti spremembe med različicami svojega osnutka, da lahko pred odobritvijo preverim popravke.
-- **Merila sprejema:**
-  1. Shranjen popravek ustvari novo različico z datumom in vlogo izvajalca.
-  2. Primerjava dveh različic pokaže spremembe postavk, cen, količin in popustov.
-  3. Odobritev ali zavrnitev ostane v zgodovini z izvajalcem in časom.
-  4. Ponudnik ne more brati zgodovine drugega podjetja; odobrena različica ostane nespremenjena.
+### US-08 — Delavci podjetja
 
-### US-19 — Analitika procesa
+**Funkcionalnost:** F8 · **Vloga:** mojster.
 
-- **Funkcionalnost:** F12 · Trajanje, odzivnost in popravki.
-- **Vloga:** ponudnik.
-- **Zgodba:** Kot ponudnik želim spremljati trajanje priprave ponudb svojega podjetja, da lahko odkrijem ozka grla.
-- **Merila sprejema:**
-  1. Za izbrano obdobje pregled pokaže število povabil, odobritev in zavrnitev lastnega podjetja.
-  2. Čas odziva se izračuna od nastanka ponudbe do odobritve ali zavrnitve; odprte ponudbe niso v povprečju zaključenih.
-  3. Število popravkov se izračuna iz shranjenih različic.
-  4. Pregled ne razkrije cenikov, stroškov ali ponudb drugih podjetij.
+Kot mojster želim upravljati dodelitve delavcev svojega podjetja, da lahko določim sodelavce brez posega v njihove druge vloge.
 
-### US-20 — Predloga RFQ
+**Merila sprejema:**
 
-- **Funkcionalnost:** F13 · Predloge pogostih povpraševanj.
-- **Vloga:** nabavnik.
-- **Zgodba:** Kot nabavnik želim iz RFQ shraniti predlogo, da lahko podobno povpraševanje pripravim hitreje.
-- **Merila sprejema:**
-  1. Predloga za kupčevo podjetje shrani naziv, postavke in dobavne zahteve.
-  2. Uporaba predloge ustvari nov osnutek RFQ, ne oddanega povpraševanja.
-  3. Spremembe novega osnutka ne spremenijo predloge ali prejšnjega RFQ.
-  4. Predloge drugega podjetja uporabnik ne more odpreti.
+1. Dodelitev `delavec` je vezana na izbranega obstoječega uporabnika in lastno podjetje; mojster lahko izbere tudi sebe.
+2. Enaka aktivna dodelitev se ne podvoji; odvzem ukine dostop delavca pri naslednjem zahtevku, zgodovina članstev pa ostane ohranjena.
+3. Dodajanje ali odvzem delavca v podjetju A ne spremeni njegovih vlog pri B in mu ne dodeli vloge mojstra.
 
-### US-21 — Opomnik ponudniku
+### US-09 — Ekipe
 
-- **Funkcionalnost:** F14 · Rok za odgovor na RFQ.
-- **Vloga:** ponudnik.
-- **Zgodba:** Kot ponudnik želim prejeti opomnik pred rokom za odgovor, da ne spregledam odprtega povabila.
-- **Merila sprejema:**
-  1. Opomnik nastane 24 ur pred `rok_za_ponudbe`, če je rok določen in ponudba še ni odobrena ali zavrnjena; pri krajšem roku nastane ob povabilu.
-  2. Vsebuje RFQ, rok in povezavo do ponudbe, ne pa podatkov drugih ponudnikov.
-  3. Za isto ponudbo in rok se pošlje največ enkrat; po pretečenem roku se ne pošlje.
+**Funkcionalnost:** F9 · **Vloga:** mojster.
 
-### US-22 — Opomnik nabavniku
+Kot mojster želim združevati delavce v ekipe, da lahko organiziram sodelavce svojega podjetja.
 
-- **Funkcionalnost:** F14 · Veljavnost odobrene ponudbe.
-- **Vloga:** nabavnik.
-- **Zgodba:** Kot nabavnik želim prejeti opomnik pred potekom veljavnosti odobrene ponudbe, da jo lahko pravočasno pregledam.
-- **Merila sprejema:**
-  1. Opomnik nastane 24 ur pred `velja_do` za odobreno ponudbo in RFQ kupčevega podjetja; če ob odobritvi ostane manj kot 24 ur, nastane takoj.
-  2. Vsebuje ponudnika, čas poteka in povezavo do ponudbe, ne pa internih stroškov.
-  3. Za isto ponudbo se pošlje največ enkrat; po poteku `velja_do` se ne pošlje.
+**Merila sprejema:**
 
-### US-23 — Zasebno pojasnilo
+1. Ekipa ima naziv in pripada podjetju; član je lahko samo uporabnik z aktivno dodelitvijo delavca pri tem podjetju.
+2. Isti delavec je lahko v več ekipah, istega članstva pa ni mogoče podvojiti.
+3. Poskus vključitve delavca drugega podjetja je zavrnjen; odstranitev iz ene ekipe ne odstrani drugih članstev.
 
-- **Funkcionalnost:** F15 · Vprašanja in pojasnila glede RFQ.
-- **Vloga:** ponudnik.
-- **Zgodba:** Kot ponudnik želim nabavnika zasebno vprašati o nejasni zahtevi RFQ, da lahko pripravim ustrezno ponudbo.
-- **Merila sprejema:**
-  1. Vprašanje je vezano na konkretno povabilo in vidno le njegovemu ponudniku ter nabavnikovemu podjetju.
-  2. Nabavnik lahko odgovori v isti niti; zapisa vsebujeta avtorja in čas.
-  3. Ponudnik drugega podjetja niti ne vidi, četudi je povabljen na isti RFQ.
-  4. Pojasnilo ne spremeni RFQ ali odobrene ponudbe brez ločenega dejanja uporabnika.
+### US-10 — Dodeljeni projekti delavca
+
+**Funkcionalnost:** F10 · **Vloga:** delavec.
+
+Kot delavec želim videti projekte in termine svojih ekip, da vem, kje in kdaj je predvideno moje delo.
+
+**Merila sprejema:**
+
+1. Mojster lahko projektu dodeli več ekip istega podjetja; ekipo drugega podjetja sistem zavrne.
+2. Delavec vidi projekt in njegov termin samo ob aktivni dodelitvi delavca, članstvu v aktivni ekipi in povezavi te ekipe s projektom.
+3. Odstranitev zadnje povezave do projekta ukine dostop pri naslednjem zahtevku; pogled delavca ne razkrije ponudbenih cen ali računov.
+
+### US-11 — PDF dokumentov
+
+**Funkcionalnost:** F11 · **Vloga:** mojster ali stranka.
+
+Kot mojster ali stranka želim prenesti poslano ponudbo oziroma izdani račun v PDF, da lahko dokument shranim zunaj aplikacije.
+
+**Merila sprejema:**
+
+1. PDF ponudbe ohrani številko, različico, stranki, postavke in vsote iz izbrane poslane ponudbe; PDF računa uporabi podatke izdanega računa.
+2. Stranka lahko prenese samo dokument svojega projekta; osnutki in dokumenti druge stranke ji niso dostopni.
+3. PDF ne razkrije internih opomb, zalog ali materialnih kalkulacij; izvoz ne spremeni stanja dokumenta.
+
+### US-12 — E-poštna obvestila
+
+**Funkcionalnost:** F12 · **Vloga:** mojster ali stranka.
+
+Kot mojster ali stranka želim prejeti e-poštno obvestilo o pomembnem poslovnem dogodku, da pravočasno opazim spremembo.
+
+**Merila sprejema:**
+
+1. Poslana ponudba in izdani račun sprožita obvestilo stranki, odločitev stranke mojstru, določitev ali sprememba termina pa stranki.
+2. Obvestilo nastane šele po uspešno potrjenem poslovnem dogodku in vsebuje povezavo, ki še vedno zahteva prijavo ter ustrezne pravice.
+3. Napaka pri dostavi ne razveljavi poslovnega dogodka; zabeleži se za ponovni poskus. Ponovna obdelava istega dogodka ne ustvari novega obvestila; ponovitve dostave uporabljajo isti identifikator, uspešno dostavljena obvestila pa se ne pošiljajo znova.
+
+### US-13 — Primerjava različic
+
+**Funkcionalnost:** F13 · **Vloga:** mojster.
+
+Kot mojster želim primerjati dve različici ponudbe istega projekta, da lahko preverim, kaj se je spremenilo.
+
+**Merila sprejema:**
+
+1. Primerjava označi dodane in odstranjene postavke ter spremembe količin, cen, popustov, DDV in končnega zneska.
+2. Primerjava uporablja shranjene podatke različic, ne trenutnega cenika, ter jasno navede obe številki različic.
+3. Mojster ne more primerjati ponudb drugega podjetja; primerjava ne spremeni nobene različice.
+
+### US-14 — Pregled poslovanja
+
+**Funkcionalnost:** F14 · **Vloga:** mojster.
+
+Kot mojster želim videti projekte po fazah in zneske računov, da lahko spremljam stanje svojega podjetja.
+
+**Merila sprejema:**
+
+1. Pregled prikaže število projektov za vsako fazo lastnega podjetja; faza brez projektov ima vrednost nič.
+2. Vsote izdanih, plačanih in neplačanih računov vključijo samo izdane račune; vsota plačanih in neplačanih je enaka vsoti izdanih.
+3. Osnutki in računi drugih podjetij niso vključeni; pregled ne prikazuje izmišljenega trajanja faz brez podatkov o zgodovini prehodov.
+
+### US-15 — Potrebe po materialu
+
+**Funkcionalnost:** F15 · **Vloga:** mojster.
+
+Kot mojster želim primerjati materiale ponudbe z zalogo, da pred izvedbo opazim primanjkljaje.
+
+**Merila sprejema:**
+
+1. Pri 20 m² dela in sestavi 3 kg/m² sistem izračuna 60 kg potrebnega materiala ter sešteje potrebe istega materiala iz vseh postavk.
+2. Če je na lokacijah skupaj 45 kg istega materiala, prikaže 15 kg primanjkljaja; materialov ali različnih enot ne sešteva brez določene pretvorbe.
+3. Pregled uporablja materialni posnetek ponudbe in samo zalogo njenega podjetja; izračun ne rezervira ali zmanjša zaloge.
+
+### US-16 — AI analiza zahteve
+
+**Funkcionalnost:** F16 · **Vloga:** mojster.
+
+Kot mojster želim dobiti strukturiran predlog iz prostega opisa projekta, da hitreje prepoznam zahtevana dela in odprta vprašanja.
+
+**Merila sprejema:**
+
+1. Predlog loči prepoznana dela, izrecno navedene količine in manjkajoče podatke; pri opisu »rušenje estriha 40 m²« ohrani 40 m².
+2. Če opis ne vsebuje količine ali enote, jo označi kot manjkajočo in je ne zapiše kot potrjeno vrednost.
+3. Analiza uporablja samo dovoljeni projekt; brez potrditve mojstra ne spremeni ponudbe, cen ali faz projekta.
+
+### US-17 — AI predlog ponudbe
+
+**Funkcionalnost:** F17 · **Vloga:** mojster.
+
+Kot mojster želim dobiti predlagane postavke iz svojega cenika, da lahko hitreje pripravim osnutek ponudbe.
+
+**Merila sprejema:**
+
+1. Vsaka predlagana povezava na cenik ali material pripada podjetju projekta; neznano delo je označeno za ročno dopolnitev.
+2. Cene in materialna sestava izhajajo iz dovoljenih shranjenih podatkov, izračune pa izvede deterministična koda; AI si ne ustvari cene ali zaloge.
+3. Predlog ostane ločen od poslane vsebine; mojster izrecno izbere in potrdi postavke za osnutek ter ponudbo pošlje po običajnem postopku.
+
+### US-18 — AI pregled obsega
+
+**Funkcionalnost:** F18 · **Vloga:** mojster.
+
+Kot mojster želim dobiti opozorila o obsegu ponudbe, da lahko pred pošiljanjem preverim neskladja.
+
+**Merila sprejema:**
+
+1. Pregled primerja opis projekta z osnutkom ter posebej označi morebitna manjkajoča, podvojena ali neskladna dela.
+2. Vsako opozorilo navede povezano postavko oziroma del opisa in razlog; negotov sklep je označen kot predlog za pregled.
+3. Opozorilo samo ne doda, odstrani ali podraži postavke in ne omogoči dostopa do podatkov drugega podjetja.
+
+### US-19 — AI pomoč pri opisu
+
+**Funkcionalnost:** F19 · **Vloga:** mojster.
+
+Kot mojster želim izboljšati besedilo dela ali pojasnila stranki, da je vsebina razumljivejša.
+
+**Merila sprejema:**
+
+1. Pred uporabo sta vidna izvirnik in predlog besedila; mojster lahko predlog zavrne ali izrecno uporabi.
+2. Uporaba predloga ne spremeni količine, merske enote, cene, popusta, DDV ali končnega zneska.
+3. Poslane ponudbe ni mogoče prepisati s predlogom; sprememba njenega besedila zahteva novo različico.
+
+### US-20 — AI povzetek projekta
+
+**Funkcionalnost:** F20 · **Vloga:** mojster.
+
+Kot mojster želim prejeti povzetek projekta in predlagane naslednje korake, da lažje nadaljujem delo.
+
+**Merila sprejema:**
+
+1. Povzetek navede trenutno fazo, stanje ponudbe oziroma računa in dovoljene dogovore iz izbranega projekta.
+2. Predlagani naslednji koraki so ločeni od ugotovljenih dejstev; manjkajoči dogovor ali termin ni predstavljen kot potrjen.
+3. Povzetek ne vključuje drugih podjetij ali nedostopnih opomb ter ne spreminja terminov, dokumentov ali stanja projekta.
+
+### US-21 — Projektne priponke
+
+**Funkcionalnost:** F21 · **Vloga:** mojster.
+
+Kot mojster želim dodati fotografije in dokumente projektu, da imam meritve in dokumentacijo ogleda pri istem delu.
+
+**Merila sprejema:**
+
+1. Priponka je vezana na konkreten projekt in ima ime, vrsto datoteke ter podatek, ali je dovoljena stranki; nedovoljena vrsta ali presežena objavljena omejitev velikosti prepreči nalaganje.
+2. Stranka lahko prenese samo njej vidne priponke lastnega projekta; neposredna povezava ne obide preverjanja pravic.
+3. Datoteka drugega projekta oziroma podjetja ne postane dostopna s spremembo identifikatorja; neuspešno nalaganje ne ustvari veljavne priponke.
+
+### US-22 — Projektne opombe in pojasnila
+
+**Funkcionalnost:** F22 · **Vloga:** mojster ali stranka.
+
+Kot mojster ali stranka želim izmenjati pojasnila na projektu, da so dogovori povezani s pravim delom.
+
+**Merila sprejema:**
+
+1. Stranka lahko objavi pojasnilo samo pri svojem projektu; mojster odgovori v okviru podjetja projekta.
+2. Mojster lahko označi opombo kot interno; stranka je ne prejme prek prikaza, API ali izvoza.
+3. Vsaka opomba prikaže avtorja in čas; uporabnik brez pravice do projekta je ne more dodati ali prebrati.
+
+## Možne nadgradnje
+
+Te zgodbe so pogojni nadaljnji obseg; niso del MVP ali obveza prvega razvojnega načrta.
+
+### US-23 — Ure in napredek dela
+
+**Funkcionalnost:** F23 · **Vloga:** delavec.
+
+Kot delavec želim zapisovati ure in napredek dodeljenega dela, da lahko poročam o izvedbi.
+
+**Merila sprejema:**
+
+1. Vnos vsebuje datum, pozitivno trajanje in opis pri projektu, do katerega ima delavec veljaven dostop prek ekipe.
+2. Delavec ne more pisati ur v imenu drugega uporabnika ali na nedodeljen projekt; mojster vidi vnose lastnega podjetja.
+3. Poročilo delavca samo ne izda računa ali zaključi projekta; poslovni zaključek ostane ločeno dejanje mojstra.
+
+### US-24 — Premiki, rezervacije in poraba
+
+**Funkcionalnost:** F24 · **Vloga:** mojster.
+
+Kot mojster želim evidentirati premike in projektno porabo materiala, da lahko sledim dejanskemu stanju zaloge.
+
+**Merila sprejema:**
+
+1. Premik med lokacijama istega podjetja v eni transakciji zmanjša izvor in poveča cilj za enako pozitivno količino.
+2. Rezervacija je vezana na projekt in ne preseže razpoložljive količine po odštetih aktivnih rezervacijah.
+3. Dejanska poraba je vezana na projekt in ustrezno zmanjša zalogo ter rezervacijo; neveljavna količina ne povzroči delne spremembe.
+
+### US-25 — Razpoložljivost ekip
+
+**Funkcionalnost:** F25 · **Vloga:** mojster.
+
+Kot mojster želim usklajevati termine z razpoložljivostjo ekip, da preprečim dvojne dodelitve.
+
+**Merila sprejema:**
+
+1. Koledar pokaže termine dodeljenih projektov in vnesene odsotnosti za lastno podjetje.
+2. Pred potrditvijo termina zazna prekrivanje iste ekipe ali delavca, tudi če je ta član več ekip.
+3. Konflikt navede prekrivajoči se interval; koledar ne razkrije projektov podjetja, pri katerem uporabnik nima ustrezne pravice.
+
+### US-26 — Računovodska in bančna povezava
+
+**Funkcionalnost:** F26 · **Vloga:** mojster.
+
+Kot mojster želim povezati dokumente in bančne evidence z zunanjim sistemom, da zmanjšam podvajanje podatkov.
+
+**Merila sprejema:**
+
+1. Izvoz izdanega računa ohrani številko in znesek; ponovitev istega izvoza ne ustvari drugega računa v zunanji evidenci.
+2. Uvožena bančna evidenca predlaga povezavo z računom istega podjetja; dvoumno ali delno plačilo ne označi računa kot plačanega.
+3. Potrditev usklajenega celotnega plačila uporabi veljaven poslovni postopek zaključka; povezava ne izvaja denarnih nakazil.
+
+### US-27 — AI analiza fotografij in dokumentov
+
+**Funkcionalnost:** F27 · **Vloga:** mojster.
+
+Kot mojster želim dobiti predlog obsega del iz projektnih priponk, da lažje pripravim začetno oceno.
+
+**Merila sprejema:**
+
+1. AI prejme samo dovoljene priponke konkretnega projekta; ugotovitev navede izvorno fotografijo ali dokument.
+2. Nezanesljive mere, količine in poškodbe označi kot negotove; iz fotografije ne zapiše ocene kot potrjene meritve.
+3. Mojster mora predlog izrecno pregledati pred uporabo; analiza sama ne ustvari poslane ponudbe, cene ali poslovne odločitve.

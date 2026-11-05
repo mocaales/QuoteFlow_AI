@@ -35,10 +35,10 @@ def administrator(db=Depends(session_database)):
         raise HTTPException(403, 'Potrebna je vloga administratorja.')
     return db
 
-ROLE_NAMES = {'ponudnik': 'ponudnika', 'nabavnik': 'nabavnika'}
+ROLE_NAMES = {'mojster': 'mojstra', 'delavec': 'delavca'}
 
 @cache
-def company_member(role: Literal['ponudnik', 'nabavnik']):
+def company_member(role: Literal['mojster', 'delavec']):
     """Guard for routes under /podjetja/{company_id}/: an active `role` at exactly that company."""
     def guard(company_id: UUID, db=Depends(session_database)):
         if not db.execute('select quoteflow_private.clan(%s,%s) as allowed', (company_id, role)).fetchone()['allowed']:

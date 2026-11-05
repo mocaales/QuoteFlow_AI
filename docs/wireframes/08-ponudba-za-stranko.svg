@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="760" viewBox="0 0 1120 760" role="img" aria-labelledby="title desc">
+<title id="title">Poslana ponudba</title><desc id="desc">Načrtovani žični model; vloga stranka · Ana Novak. Ne predstavlja izvedenega zaslona.</desc>
+<style>text{font-family:Arial,sans-serif;fill:#243039;font-size:16px}.title{font-size:28px;font-weight:700}.label{font-size:19px;font-weight:700}.small{font-size:14px;fill:#52616b}.action{font-weight:700}</style>
+<rect width="1120" height="760" fill="#f5f6f7"/>
+<rect width="1120" height="78" fill="#e6eaed"/>
+<text x="32" y="36" class="label">QuoteFlow AI</text>
+<text x="32" y="61" class="small">Žični model · stranka · Ana Novak · načrtovano</text>
+<text x="32" y="126" class="title">Poslana ponudba</text>
+<rect x="32" y="160" width="670" height="510" rx="6" fill="white" stroke="#aeb8c0"/>
+<text x="54" y="196" class="label">Prenova kopalnice · P-001 / 1</text>
+<text x="54" y="234">Izvajalec: Gradnje Primer</text>
+<text x="54" y="266">Stanje: poslana</text>
+<text x="54" y="298">Rušenje estriha · 45 m² × 20,00 EUR</text>
+<text x="54" y="330">Popust: 10 %</text>
+<text x="54" y="362">Neto: 810,00 EUR</text>
+<text x="54" y="394">DDV 22 %: 178,20 EUR</text>
+<text x="54" y="426">Za plačilo: 988,20 EUR</text>
+<text x="54" y="458">Prikazana je nespremenljiva poslana vsebina.</text>
+<rect x="52" y="615" width="630" height="36" rx="3" fill="#e6eaed"/>
+<text x="64" y="639" class="action">Sprejmi ponudbo / Zavrni ponudbo</text>
+<rect x="726" y="160" width="362" height="510" rx="6" fill="white" stroke="#aeb8c0"/>
+<text x="748" y="196" class="label">Odločitev</text>
+<text x="748" y="234">Po sprejemu:</text>
+<text x="748" y="266">projekt → termin</text>
+<text x="748" y="298">nastane osnutek računa</text>
+<text x="748" y="330"></text>
+<text x="748" y="362">Po zavrnitvi:</text>
+<text x="748" y="394">mojster lahko pripravi</text>
+<text x="748" y="426">novo različico ponudbe.</text>
+<text x="748" y="458"></text>
+<text x="748" y="490">Interni materiali so skriti.</text>
+<rect x="746" y="615" width="322" height="36" rx="3" fill="#e6eaed"/>
+<text x="758" y="639" class="action">Stanje odločitve</text>
+<text x="32" y="733" class="small">Primeri podatkov · obseg in pravice določajo dokumenti 02, 03 in 05.</text>
+</svg>

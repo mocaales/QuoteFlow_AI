@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="760" viewBox="0 0 1120 760" role="img" aria-labelledby="title desc">
+<title id="title">Projekt in priprava ponudbe</title><desc id="desc">Načrtovani žični model; vloga mojster · Gradnje Primer. Ne predstavlja izvedenega zaslona.</desc>
+<style>text{font-family:Arial,sans-serif;fill:#243039;font-size:16px}.title{font-size:28px;font-weight:700}.label{font-size:19px;font-weight:700}.small{font-size:14px;fill:#52616b}.action{font-weight:700}</style>
+<rect width="1120" height="760" fill="#f5f6f7"/>
+<rect width="1120" height="78" fill="#e6eaed"/>
+<text x="32" y="36" class="label">QuoteFlow AI</text>
+<text x="32" y="61" class="small">Žični model · mojster · Gradnje Primer · načrtovano</text>
+<text x="32" y="126" class="title">Projekt in priprava ponudbe</text>
+<rect x="32" y="160" width="340" height="510" rx="6" fill="white" stroke="#aeb8c0"/>
+<text x="54" y="196" class="label">Projekt</text>
+<text x="54" y="234">Stranka: Ana Novak</text>
+<text x="54" y="266">Naziv: Prenova kopalnice</text>
+<text x="54" y="298">Lokacija: Primerna ulica 2</text>
+<text x="54" y="330">Opis: Rušenje 45 m² estriha</text>
+<text x="54" y="362">Faza: pregled / ogled</text>
+<text x="54" y="394">Ogled je neobvezen.</text>
+<rect x="52" y="615" width="300" height="36" rx="3" fill="#e6eaed"/>
+<text x="64" y="639" class="action">Shrani projekt</text>
+<rect x="396" y="160" width="692" height="510" rx="6" fill="white" stroke="#aeb8c0"/>
+<text x="418" y="196" class="label">Osnutek ponudbe P-001 · različica 1</text>
+<text x="418" y="234">Postavka          Enota  Količina   Cena/enoto</text>
+<text x="418" y="266">Rušenje estriha     m²       45       20,00 EUR</text>
+<text x="418" y="298">Opis: odstranitev obstoječega estriha</text>
+<text x="418" y="330">Popust: 10 % · stopnja DDV: 22 %</text>
+<text x="418" y="362">Neto: 810,00 EUR · DDV: 178,20 EUR</text>
+<text x="418" y="394">Skupaj: 988,20 EUR</text>
+<text x="418" y="426">[Dodaj iz cenika]  [Ročni vnos]</text>
+<text x="418" y="458">Pred pošiljanjem preveri vsebino in zneske.</text>
+<rect x="416" y="615" width="652" height="36" rx="3" fill="#e6eaed"/>
+<text x="428" y="639" class="action">Shrani osnutek / Pošlji stranki v aplikaciji</text>
+<text x="32" y="733" class="small">Primeri podatkov · obseg in pravice določajo dokumenti 02, 03 in 05.</text>
+</svg>

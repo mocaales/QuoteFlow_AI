@@ -1,8 +1,8 @@
 # Omejen AI predlaga, program preveri, ponudnik odobri
 
-- **Status:** sprejeto
+- **Status:** zgodovinsko; prvotna odločitev za RFQ se ne uporablja v novem projektnem procesu
 - **Datum:** 2026-10-20
-- **Izvedba:** načrtovana; AI-agent še ni povezan z aplikacijo
+- **Izvedba:** ni izvedeno. ADR-0010 nadomešča izhodiščni RFQ-proces. Novi [obseg F16–F20](../02-funkcionalnosti-in-obseg.md) potrjuje AI-pomoč po MVP, vendar tega ADR ne obnovi. Pred implementacijo nov ADR določi ponudnika, model in omejena orodja za projektni proces.
 
 ## Kontekst in problem
 
