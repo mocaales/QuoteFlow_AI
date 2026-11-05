@@ -75,3 +75,64 @@ def test_tuja_podjetja_delavec_stranka_admin_in_odvzeta_vloga(master_api, materi
     selected['name'] = 'worker'; assert client.get(base + '/cenik').status_code == 200
     selected['name'] = 'admin'; assert client.patch('/api/admin/vloge/' + role['id'], json={'aktivna': False}).status_code == 200
     selected['name'] = 'worker'; assert client.get(base + '/cenik').status_code == 403
+
+
+@pytest.fixture
+def sestava(master_api, material):
+    client, selected, base = master_api
+    item = client.post(base + '/cenik', json=ITEM).json()
+    return client, selected, base, item['id'], material[0]['id']
+
+
+def test_sestava_dodaj_spremeni_odstrani_in_decimalna_kolicina(sestava):
+    client, _, base, item, mat = sestava
+    path = f'{base}/cenik/{item}/sestava'
+    assert client.get(path).json() == []
+    r = client.put(f'{path}/{mat}', json={'kolicina_na_enoto': '1.25'}); assert r.status_code == 200, r.text
+    assert r.json()['sifra'] == 'LEP-1' and r.json()['enota'] == 'kg' and r.json()['aktiven'] is True and float(r.json()['kolicina_na_enoto']) == 1.25
+    assert client.put(f'{path}/{mat}', json={'kolicina_na_enoto': '0.0001'}).status_code == 200
+    rows = client.get(path).json(); assert len(rows) == 1 and float(rows[0]['kolicina_na_enoto']) == 0.0001
+    assert client.delete(f'{path}/{mat}').status_code == 204 and client.get(path).json() == []
+    assert client.delete(f'{path}/{mat}').status_code in (204, 404)
+
+
+@pytest.mark.parametrize('value', ['0', '-1', '1.00001'])
+def test_sestava_neveljavna_kolicina_je_422(sestava, value):
+    client, _, base, item, mat = sestava
+    assert client.put(f'{base}/cenik/{item}/sestava/{mat}', json={'kolicina_na_enoto': value}).status_code == 422
+
+
+def test_sestava_neaktiven_material_ne_gre_v_sestavo_a_se_odstrani(sestava):
+    client, _, base, item, mat = sestava
+    path = f'{base}/cenik/{item}/sestava/{mat}'
+    assert client.put(path, json={'kolicina_na_enoto': '2'}).status_code == 200
+    body = {'vrsta_materiala_id': client.get(base + '/materiali').json()[0]['vrsta_materiala_id'], 'sifra': 'LEP-1', 'naziv': 'Lepilo', 'enota': 'kg', 'cena_na_enoto': '2.1234', 'aktiven': False}
+    assert client.put(f'{base}/materiali/{mat}', json=body).status_code == 200
+    r = client.put(path, json={'kolicina_na_enoto': '3'}); assert r.status_code == 409 and r.json()['detail'] == 'Neaktivnega materiala ni mogoče dodati v sestavo.'
+    listed = client.get(f'{base}/cenik/{item}/sestava').json(); assert listed[0]['aktiven'] is False and float(listed[0]['kolicina_na_enoto']) == 2
+    assert client.delete(path).status_code == 204 and client.get(f'{base}/cenik/{item}/sestava').json() == []
+
+
+def test_sestava_tuje_podjetje_postavka_material_delavec_stranka(sestava, identities):
+    client, selected, base, item, mat = sestava; _, a, b, _ = identities
+    path = f'{base}/cenik/{item}/sestava'
+    assert client.put(f'{path}/{uuid4()}', json={'kolicina_na_enoto': '1'}).status_code == 404
+    assert client.put(f'{base}/cenik/{uuid4()}/sestava/{mat}', json={'kolicina_na_enoto': '1'}).status_code == 404
+    for actor in ('owner_b', 'worker', 'customer', 'admin', 'outsider'):
+        selected['name'] = actor
+        assert client.get(path).status_code == 403 and client.put(f'{path}/{mat}', json={'kolicina_na_enoto': '1'}).status_code == 403 and client.delete(f'{path}/{mat}').status_code == 403
+    selected['name'] = 'owner_b'; foreign = f'/api/podjetja/{b}/cenik'
+    other = client.post(foreign, json=ITEM).json()['id']
+    assert client.put(f'{foreign}/{other}/sestava/{mat}', json={'kolicina_na_enoto': '1'}).status_code == 404
+    assert client.put(f'{foreign}/{item}/sestava/{mat}', json={'kolicina_na_enoto': '1'}).status_code == 404
+    assert client.delete(f'{foreign}/{item}/sestava/{mat}').status_code == 404
+    r = client.get(f'{foreign}/{item}/sestava'); assert r.status_code == 404 and r.json()['detail'] == 'Zapis ni na voljo.'
+    selected['name'] = 'owner_a'; assert client.get(path).json() == []
+
+
+def test_sestava_tuje_ali_neobstojece_postavke_je_404(sestava, identities):
+    client, selected, base, item, _ = sestava; b = identities[2]
+    assert client.get(f'{base}/cenik/{item}/sestava').status_code == 200
+    r = client.get(f'{base}/cenik/{uuid4()}/sestava'); assert r.status_code == 404 and r.json()['detail'] == 'Zapis ni na voljo.'
+    selected['name'] = 'owner_b'
+    r = client.get(f'/api/podjetja/{b}/cenik/{item}/sestava'); assert r.status_code == 404 and r.json()['detail'] == 'Zapis ni na voljo.'

@@ -109,6 +109,10 @@ th:last-child,td:last-child{padding-right:0}
 @media(hover:hover){tbody tr:hover{background:#fafbfa}}
 td strong{font-weight:500}
 .data-table td:first-child{width:40%;white-space:normal;min-width:240px}
+.phase-section{margin-top:var(--gap)}
+.phase-section h2{margin-bottom:8px}
+.qty-input{width:120px;text-align:right;font-variant-numeric:tabular-nums}
+@media(min-width:641px){.phase-table{table-layout:fixed}.phase-table td:first-child{min-width:0}.phase-table th:nth-child(2),.phase-table td:nth-child(2){width:26%}.phase-table th:nth-child(3),.phase-table td:nth-child(3){width:340px;white-space:nowrap}.phase-table th:nth-child(4),.phase-table td:nth-child(4){width:96px;text-align:right}.phase-table td{overflow:hidden;text-overflow:ellipsis}}
 .rules-table td:first-child{width:auto;white-space:nowrap;min-width:0}
 .cell-detail{display:block;font-size:12px;line-height:16px;color:var(--muted);margin-top:2px}
 td.muted,.muted-value{color:var(--muted)}
@@ -262,6 +266,7 @@ footer{display:flex;justify-content:space-between;gap:20px;border-top:1px solid 
  .data-table td[data-label]:not(:nth-child(2)){font-size:13px;color:var(--muted)}
  .data-table td[data-label]:not(:nth-child(2))::before{content:attr(data-label) ' '}
  .data-table td:last-child:has(button){margin-left:auto}
+ .data-table .qty-input{width:96px}
  .list-table td:nth-child(2){order:3;flex:1 1 100%;font-weight:400}
  .table-wrap:has(.data-table){overflow:visible}
 }

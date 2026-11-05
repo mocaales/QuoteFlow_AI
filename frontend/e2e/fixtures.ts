@@ -38,6 +38,17 @@ export const masterRequests=[
  {id:'p3',uporabnik_id:'u3',naziv_podjetja:'Zidarstvo Horvat s.p.',maticna_stevilka:'7778901000',davcna_stevilka:null,naslov_podjetja:'Trg 3, Kranj',stanje:'odobrena',podjetje_id:B,oddano_ob:'2026-10-25T12:00:00Z',odloceno_ob:'2026-10-26T09:00:00Z',e_posta:'jure@example.test',ime:'Jure',priimek:'Horvat'},
 ];
 
+export const composition=[{material_id:'m1',sifra:'LEP-1',naziv:'Lepilo za ploščice',enota:'kg',aktiven:true,kolicina_na_enoto:'4.5000'},{material_id:'m2',sifra:'CEM-1',naziv:'Cement',enota:'kg',aktiven:true,kolicina_na_enoto:'1.2000'}];
+export const projects=[
+ {id:'pr1',naziv:'Obnova kopalnice',opis:'Rušenje estriha in nova keramika',lokacija_izvedbe:'Maribor, Glavni trg 1',faza:'pregled',stranka_ime:'Janez',stranka_priimek:'Kranjc',stranka_e_posta:'janez@example.test',termin_od:null,termin_do:null},
+ {id:'pr2',naziv:'Menjava oken',opis:'Šest oken',lokacija_izvedbe:'Celje, Cesta 5',faza:'ponudba',stranka_ime:'Maja',stranka_priimek:'Zupan',stranka_e_posta:'maja@example.test',termin_od:null,termin_do:null},
+ {id:'pr3',naziv:'Nov estrih',opis:'Estrih 40 m2',lokacija_izvedbe:'Ptuj, Slovenska 3',faza:'izvedba',stranka_ime:'Janez',stranka_priimek:'Kranjc',stranka_e_posta:'janez@example.test',termin_od:'2026-11-10T08:00:00Z',termin_do:'2026-11-12T16:00:00Z'},
+];
+export const ownProjects=[
+ {id:'pr1',naziv:'Obnova kopalnice',opis:'Rušenje estriha in nova keramika',lokacija_izvedbe:'Maribor, Glavni trg 1',faza:'pregled',podjetje_naziv:'Mojster Novak d.o.o.',termin_od:null,termin_do:null},
+ {id:'pr4',naziv:'Beljenje stanovanja',opis:'80 m2',lokacija_izvedbe:'Kranj, Trg 3',faza:'ogled',podjetje_naziv:'Gradnje Kos d.o.o.',termin_od:'2026-11-08T09:00:00Z',termin_do:'2026-11-08T10:00:00Z'},
+];
+
 export type Mock = { catalogStatus?: number };
 export async function mockApi(page: Page, options: Mock = {}) {
  await page.route(`${SUPABASE}/**`, route => route.fulfill({ status: 200, json: {} }));
@@ -48,6 +59,9 @@ export async function mockApi(page: Page, options: Mock = {}) {
   if (path === '/health') return json({ status: 'ok' });
   if (path === '/me') return json(profile);
   if (path === '/podjetja') return json(companies);
+  if (path.endsWith('/sestava')) return json(path.includes('/i2/') ? composition : []);
+  if (path === '/projekti') return json(ownProjects);
+  if (path.endsWith('/projekti')) return json(projects);
   if (path.endsWith('/cenik')) return options.catalogStatus ? json({ detail: 'Podatkovna baza trenutno ni na voljo.' }, options.catalogStatus) : json(catalog);
   if (path.endsWith('/vrste-materiala')) return json(kinds);
   if (path.endsWith('/materiali')) return json(materials);

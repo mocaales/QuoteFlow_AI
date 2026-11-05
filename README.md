@@ -2,9 +2,9 @@
 
 Večpodjetniška spletna aplikacija za vodenje projektov, ekip, cenika, materialov, ponudb in računov. Uporabnik lahko nastopa kot stranka ter kot mojster ali delavec pri različnih podjetjih.
 
-**Izvedeno:** nova relacijska shema je uvedena v Supabase. Delujejo registracija/prijava, nove vloge, administratorsko upravljanje uporabnikov in podjetij z lastnikom, prošnja za mojstra z administratorsko odločitvijo (odobritev ustvari podjetje, lastništvo in vlogo mojster) ter cenik storitev, materiali in zaloga po lokacijah.
+**Izvedeno:** nova relacijska shema je uvedena v Supabase. Delujejo registracija/prijava, nove vloge, administratorsko upravljanje uporabnikov in podjetij z lastnikom, prošnja za mojstra z administratorsko odločitvijo (odobritev ustvari podjetje, lastništvo in vlogo mojster) cenik storitev z materialno sestavo postavk (US-02), materiali in zaloga po lokacijah ter začetek projekta: mojster odpre projekt za stranko z natančnim e-poštnim naslovom, ga ureja in zahteva ogled, stranka vidi svoje projekte (US-03).
 
-**Naslednji razvoj:** uporabniški postopki za projekte, ekipe, ponudbe in račune. Baza že vsebuje njihove omejitve in transakcijske postopke; API in vmesnik celotnega življenjskega cikla še nista uvedena. [Stanje razvoja](docs/razvoj/podatkovni-model.md).
+**Naslednji razvoj:** ekipe, termin, ponudbe in računi (načrtovano). Baza že vsebuje njihove omejitve in transakcijske postopke; API in vmesnik teh postopkov še nista uvedena. Migraciji za sestavo in projekte sta uvedeni v Supabase 5. 11. 2026. [Stanje razvoja](docs/razvoj/podatkovni-model.md).
 
 **Načrtovani obseg:** [22 funkcionalnosti, od tega 7 MVP, in 5 možnih nadgradenj](docs/02-funkcionalnosti-in-obseg.md). AI-pomoč pri analizi projekta, pripravi in pregledu osnutkov ter povzetkih je načrtovana po MVP (F16–F20) in še ni izvedena.
 
@@ -43,7 +43,7 @@ Večpodjetniška spletna aplikacija za vodenje projektov, ekip, cenika, material
 
 Compose zažene frontend in backend; baza ostane v Supabase.
 
-Migracije iz `supabase/migrations/` se ne izvajajo samodejno.
+Migracije iz `supabase/migrations/` se ne izvajajo samodejno. Lokalni Supabase za teste (`supabase start`) zažene samo db, auth, rest, kong in inbucket.
 
 Kalkulator deluje tudi brez baze; `/api/ready` ob manjkajoči povezavi ali nepripravljeni bazi vrne HTTP 503.
 
@@ -72,5 +72,7 @@ docker compose down
 - [Uvedba novega podatkovnega modela](docs/razvoj/podatkovni-model.md)
 - [Zgodovina US-01–US-02: identiteta in pravice](docs/razvoj/us-01-us-02-identiteta-in-pravice.md)
 - [US-01: prošnja mojstra (#33, #34)](docs/razvoj/us-01-prosnja-mojstra.md)
+- [US-02: materialna sestava (#35–#37)](docs/razvoj/us-02-materialna-sestava.md)
+- [US-03: začetek projekta (#38–#40)](docs/razvoj/us-03-projekti.md)
 - [Organizacija frontenda](docs/razvoj/frontend-arhitektura.md)
 - [Zgodovina US-03–US-05: podatki ponudnika](docs/razvoj/us-03-us-05-podatki-ponudnika.md)

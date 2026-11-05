@@ -8,13 +8,15 @@ Migracija `20261103211654_v2_projects_roles_catalog.sql` je uvedla 17 tabel s pr
 
 Migracija `20261105114405_prosnja_varnost.sql` je bila v Supabase uvedena 5. 11. 2026. Omeji uporabnika na eno oddano prošnjo za mojstra, ob odobritvi ponovno preveri vlagatelja in matično številko ter uvede kode SQLSTATE `QFP01`–`QFP04` za pričakovane konflikte. Pred uvedbo je preverjanje pokazalo, da v bazi ni podvojenih oddanih prošenj.
 
+Migraciji `20261105140047_materialna_sestava.sql` ([US-02](us-02-materialna-sestava.md)) in `20261105140049_projekti.sql` ([US-03](us-03-projekti.md)) sta uvedeni v Supabase 5. 11. 2026.
+
 Dve stari podjetji in preostali stari poslovni podatki so v omejenem arhivu `quoteflow_legacy_20261103`, stare interne funkcije v `quoteflow_private_legacy_20261103`. Aplikacijske vloge do arhiva nimajo dostopa. Nova podjetja se niso ugibala iz starih podatkov: ustvarijo se z izrecnim lastnikom in registracijskimi podatki. Pred uvedbo je nastala lokalna varnostna kopija, izključena iz Gita.
 
 ## Izvedeno in naslednji sklop
 
 API in vmesnik uporabljata nove vloge, podjetja z lastnikom, cenik storitev, vrste materiala, materiale in zalogo po lokacijah. Poslovni zahtevki preverijo Supabase Auth, aktivno sejo, trenutno vlogo in podjetje; neposredni zapisi aplikacijske vloge v tabele niso dovoljeni.
 
-Baza vsebuje povezave, omejitve in transakcijske postopke za prošnje mojstrov, projekte, ekipe, različice ponudb in račune. Prek API/vmesnika je uvedena le prošnja mojstra ([zapis](us-01-prosnja-mojstra.md)); preostali uporabniški postopki (projekti, ekipe, ponudbe, računi) še niso uvedeni. Samodejno pošiljanje e-pošte in AI-pomoč še nista uvedena. [Obseg](../02-funkcionalnosti-in-obseg.md), [uporabniške zgodbe](../05-uporabniske-zgodbe.md) in [wireframi](../06-wireframes.md) so usklajeni z novim načrtom: 22 predvidenih funkcionalnosti (7 MVP) in 5 možnih nadgradenj. AI F16–F20 sledi po MVP; e-pošta, priloge, opombe in del nadaljnjih funkcionalnosti potrebujejo razširitve modela oziroma shrambe.
+Baza vsebuje povezave, omejitve in transakcijske postopke za prošnje mojstrov, projekte, ekipe, različice ponudb in račune. Prek API/vmesnika so uvedeni prošnja mojstra ([zapis](us-01-prosnja-mojstra.md)), materialna sestava postavk ([US-02](us-02-materialna-sestava.md)) ter začetek projekta (ustvarjanje, urejanje, zahteva ogleda, pogled stranke; [US-03](us-03-projekti.md)); ekipe, termin, ponudbe in računi še niso uvedeni. Samodejno pošiljanje e-pošte in AI-pomoč še nista uvedena. [Obseg](../02-funkcionalnosti-in-obseg.md), [uporabniške zgodbe](../05-uporabniske-zgodbe.md) in [wireframi](../06-wireframes.md) so usklajeni z novim načrtom: 22 predvidenih funkcionalnosti (7 MVP) in 5 možnih nadgradenj. AI F16–F20 sledi po MVP; e-pošta, priloge, opombe in del nadaljnjih funkcionalnosti potrebujejo razširitve modela oziroma shrambe.
 
 Razvojna zapisa US-01–US-02 in US-03–US-05 opisujeta prejšnji obseg. Obstoječe GitHub naloge prav tako ohranijo prvotni pomen; s prenovo dokumentacije niso bile preštevilčene ali zaprte. Njihova uskladitev je ločen korak.
 
@@ -33,7 +35,7 @@ npm --prefix frontend run build
 npm --prefix frontend run test:e2e
 ```
 
-Podatkovni testi zahtevajo namenski lokalni Supabase prek `TEST_DATABASE_URL`; preverjanje prijavnega toka tudi `TEST_AUTH_FLOW_URL`. Brez teh nastavitev pytest pripadajoče teste preskoči. Ne usmerjajte testov s poskusnimi zapisi v produkcijo.
+Podatkovni testi zahtevajo namenski lokalni Supabase prek `TEST_DATABASE_URL`; preverjanje prijavnega toka tudi `TEST_AUTH_FLOW_URL`. Lokalni Supabase (`supabase start`) po `supabase/config.toml` zažene samo db, auth, rest, kong in inbucket. Brez teh nastavitev pytest pripadajoče teste preskoči. Ne usmerjajte testov s poskusnimi zapisi v produkcijo.
 
 Regresija nadgradnje z že napolnjeno staro shemo uporablja PostgreSQL na `127.0.0.1:54322`, ustvari začasno testno bazo in jo po preverjanju odstrani:
 

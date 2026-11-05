@@ -3,7 +3,7 @@ from uuid import uuid4
 
 import pytest
 from pydantic import ValidationError
-from app.identity import CompanyInput, RoleInput
+from app.routers.admin import CompanyInput, RoleInput
 
 
 def test_podjetje_zahteva_lastnika_in_identifikacijske_podatke():

@@ -1,41 +1,14 @@
-"""Company service catalogue and stocked materials, scoped to active masters."""
-from decimal import Decimal
-from typing import Annotated
+"""Material kinds, materials and per-location stock, scoped to active masters."""
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import Field
 
-from .access import company_member
+from app.access import company_member
+from app.models.common import Amount, Input
 
 router = APIRouter(prefix='/podjetja/{company_id}')
-Amount = Annotated[Decimal, Field(ge=0, max_digits=18, decimal_places=4, allow_inf_nan=False)]
-TaxRate = Annotated[Decimal, Field(ge=0, le=1, max_digits=7, decimal_places=6, allow_inf_nan=False)]
-
-class Input(BaseModel):
-    model_config = ConfigDict(extra='forbid')
-
-    @field_validator('*')
-    @classmethod
-    def nonempty(cls, value):
-        if isinstance(value, str):
-            if not value.strip():
-                raise ValueError('Vrednost ne sme biti prazna.')
-            return value.strip()
-        return value
-
-class CatalogInput(Input):
-    naziv: str = Field(min_length=1, max_length=200)
-    opis: str = Field(min_length=1, max_length=1000)
-    vrsta_dela: str = Field(min_length=1, max_length=200)
-    enota: str = Field(min_length=1, max_length=30)
-    cena_na_enoto: Amount
-    stopnja_ddv: TaxRate
-    aktivna: bool = True
-
-class CatalogRow(CatalogInput):
-    id: UUID
-    podjetje_id: UUID
+master = company_member('mojster')
 
 class MaterialKindInput(Input):
     naziv: str = Field(min_length=1, max_length=200)
@@ -62,26 +35,6 @@ class StockInput(Input):
 class StockRow(StockInput):
     material_id: UUID
 
-master = company_member('mojster')
-
-@router.get('/cenik', response_model=list[CatalogRow])
-def catalog(company_id: UUID, db=Depends(master)):
-    return db.execute('''select id,podjetje_id,naziv,opis,vrsta_dela,enota,cena_na_enoto,stopnja_ddv,aktivna
-        from quoteflow.postavka_cenika where podjetje_id=%s order by aktivna desc,naziv,id''', (company_id,)).fetchall()
-
-
-def save(db, company_id, item_id, data):
-    return db.execute('select * from quoteflow_private.shrani_cenik(%s,%s,%s,%s,%s,%s,%s,%s,%s)',
-        (company_id, item_id, data.naziv, data.opis, data.vrsta_dela, data.enota,
-         data.cena_na_enoto, data.stopnja_ddv, data.aktivna)).fetchone()
-
-@router.post('/cenik', status_code=201, response_model=CatalogRow)
-def create_item(company_id: UUID, data: CatalogInput, db=Depends(master)):
-    return save(db, company_id, None, data)
-
-@router.put('/cenik/{item_id}', response_model=CatalogRow)
-def update_item(company_id: UUID, item_id: UUID, data: CatalogInput, db=Depends(master)):
-    return save(db, company_id, item_id, data)
 
 @router.get('/vrste-materiala', response_model=list[MaterialKindRow])
 def material_kinds(company_id: UUID, db=Depends(master)):

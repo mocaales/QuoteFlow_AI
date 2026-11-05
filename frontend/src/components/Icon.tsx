@@ -1,4 +1,4 @@
-export type IconName = 'grid' | 'list' | 'stock' | 'rules' | 'users' | 'arrow' | 'plus' | 'search' | 'close' | 'logout' | 'check' | 'menu' | 'refresh' | 'calculator' | 'pen' | 'revoke' | 'restore' | 'trash' | 'user-plus';
+export type IconName = 'grid' | 'list' | 'stock' | 'rules' | 'users' | 'arrow' | 'plus' | 'search' | 'close' | 'logout' | 'check' | 'menu' | 'refresh' | 'calculator' | 'pen' | 'revoke' | 'restore' | 'trash' | 'user-plus' | 'calendar';
 type Name = IconName;
 const paths: Record<Name, string> = {
  grid: 'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',
@@ -16,6 +16,7 @@ const paths: Record<Name, string> = {
  restore: 'M3 12a9 9 0 1 0 2.6-6.4L3 8 M3 3v5h5',
  trash: 'M4 7h16 M9 7V4h6v3 M6 7l1 13h10l1-13 M10 11v6 M14 11v6',
  'user-plus': 'M15 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 3 18.5V20 M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7 M19 8v6 M16 11h6',
+ calendar: 'M4 5h16v15H4z M4 10h16 M8 3v4 M16 3v4 M8 14h.01 M12 14h.01 M16 14h.01',
  calculator: 'M6 3h12v18H6z M9 7h6 M9 12h.01 M12 12h.01 M15 12h.01 M9 16h.01 M12 16h.01 M15 16h.01',
 };
 export default function Icon({ name }: { name: Name }) {

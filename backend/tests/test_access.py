@@ -49,3 +49,36 @@ def test_prosnje_mojstra_poti_obstajajo_in_so_zascitene():
     assert wanted <= found, wanted - found
     for path, deps in ROUTES:
         if path.startswith('/api/prosnje') or path.startswith('/api/admin/prosnje'): assert current_user in deps and session_database in deps and (administrator in deps) == path.startswith('/api/admin/'), path
+
+
+def test_sestava_in_projekti_poti_obstajajo_in_so_zascitene():
+    found = {(m, r.path) for r in app.routes if isinstance(r, APIRoute) for m in r.methods}
+    base = '/api/podjetja/{company_id}'
+    wanted = {('GET', base + '/cenik/{item_id}/sestava'), ('PUT', base + '/cenik/{item_id}/sestava/{material_id}'), ('DELETE', base + '/cenik/{item_id}/sestava/{material_id}'),
+              ('GET', base + '/projekti'), ('POST', base + '/projekti'), ('PUT', base + '/projekti/{projekt_id}'), ('POST', base + '/projekti/{projekt_id}/ogled'),
+              ('GET', '/api/projekti'), ('GET', '/api/projekti/{projekt_id}')}
+    assert wanted <= found, wanted - found
+    for path, deps in ROUTES:
+        if '/sestava' in path or path.startswith(base + '/projekti'):
+            assert any(getattr(c, 'company_role', None) == 'mojster' for c in deps) and current_user in deps and session_database in deps, path
+        if path.startswith('/api/projekti'):
+            assert current_user in deps and session_database in deps and administrator not in deps and not any(getattr(c, 'company_role', None) for c in deps), path
+
+
+def test_nove_poti_brez_zetona_so_401():
+    from uuid import uuid4
+    from fastapi.testclient import TestClient
+    c, u, m = TestClient(app, raise_server_exceptions=False), uuid4(), uuid4()
+    base = f'/api/podjetja/{u}'
+    for method, path in [('get', f'{base}/cenik/{u}/sestava'), ('put', f'{base}/cenik/{u}/sestava/{m}'), ('delete', f'{base}/cenik/{u}/sestava/{m}'),
+                         ('get', f'{base}/projekti'), ('post', f'{base}/projekti'), ('put', f'{base}/projekti/{m}'), ('post', f'{base}/projekti/{m}/ogled'),
+                         ('get', '/api/projekti'), ('get', f'/api/projekti/{m}')]:
+        assert getattr(c, method)(path).status_code == 401, (method, path)
+
+
+def test_lastni_projekti_zahtevajo_vlogo_stranka():
+    from app import access
+    customer = getattr(access, 'customer', None)
+    assert customer is not None, 'app.access.customer manjka'
+    for path, deps in ROUTES:
+        if path.startswith('/api/projekti'): assert customer in deps and current_user in deps and session_database in deps, path
