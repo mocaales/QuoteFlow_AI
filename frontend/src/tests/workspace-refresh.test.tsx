@@ -22,7 +22,7 @@ beforeEach(() => {
   if (path === '/me') {
    if (wait) await wait;
    if (failure) throw failure;
-   return { id: 'u', e_posta: 'admin@example.test', vloge: admin ? [{ id: 'r', podjetje_id: null, vloga: 'administrator', naziv: null }] : [] };
+   return { id: 'u', e_posta: 'admin@example.test', vloge: admin ? [{ id: 'r', podjetje_id: null, vloga: 'admin', naziv: null }] : [] };
   }
   return [];
  });

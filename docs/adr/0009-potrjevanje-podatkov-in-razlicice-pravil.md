@@ -1,8 +1,10 @@
 # Potrjevanje podatkov ponudnika in različice pravil
 
-- **Status:** sprejeto
+- **Status:** nadomeščeno z [ADR-0010](0010-projekti-podjetja-in-vec-vlog.md)
 - **Datum:** 2026-10-29
 - **Izvedba:** izvedena za US-03–US-05
+
+> Zgodovinska odločitev za prejšnji model. Ne opisuje trenutne sheme.
 
 ## Kontekst in problem
 

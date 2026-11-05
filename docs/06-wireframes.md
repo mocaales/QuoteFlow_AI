@@ -1,27 +1,35 @@
 # Žični modeli aplikacije
 
-Štiri skice prikazujejo osnovni videz in zaporedje opravil v MVP. Gre za žične modele, ne za že implementirane zaslone. Podatki v skicah so primeri.
+Skice prikazujejo načrtovani MVP iz [dokumenta 02](02-funkcionalnosti-in-obseg.md), ne že izvedenih zaslonov. Podatki so primeri. Oznake US se nanašajo na [trenutne uporabniške zgodbe](05-uporabniske-zgodbe.md).
 
-## 1. Novo povpraševanje
+## 1. Račun in prošnja za mojstra — F1, US-01
 
-[![Obrazec za novo povpraševanje](wireframes/01-novo-povprasevanje.png)](wireframes/01-novo-povprasevanje.png)
+![Račun in prošnja za mojstra](wireframes/05-racun-in-prosnja.svg)
 
-Nabavnik vnese postavko, dobavne zahteve in rok ter izbere samodejni ali ročni način izbire ponudnikov. »Nadaljuj« vodi do pregleda izbora pred oddajo. **Povezano:** US-06–US-08 (F3, F4).
+Registracija in prijava ter prošnja s podatki podjetja. Admin prošnjo obravnava v svojem pogledu; odobritev hkrati ustvari podjetje, lastništvo in vlogo mojstra. Stranka za registracijo ne potrebuje podjetja.
 
-## 2. Podatki ponudnika
+## 2. Cenik, materiali in zaloga — F2, US-02
 
-[![Cenik in zaloga ponudnika](wireframes/02-podatki-ponudnika.png)](wireframes/02-podatki-ponudnika.png)
+![Cenik, materiali in zaloga](wireframes/06-cenik-in-materiali.svg)
 
-Ponudnik pregleduje cenik blaga in storitev, stanje potrditve, morebitno zalogo in veljavna pravila podjetja. Nepotrjena postavka ni vir za samodejni osnutek. **Povezano:** US-03–US-05 (F2).
+Mojster ureja storitve, neobvezno materialno sestavo ter materiale in zalogo po lokacijah samo svojega podjetja.
 
-## 3. Pregled osnutka ponudbe
+## 3. Projekt in osnutek ponudbe — F3–F4, US-03–US-04
 
-[![Osnutek ponudbe v pregledu](wireframes/03-pregled-osnutka.png)](wireframes/03-pregled-osnutka.png)
+![Projekt in priprava ponudbe](wireframes/07-projekt-in-osnutek.svg)
 
-Ponudnik primerja kupčevo zahtevo s predlagano postavko, vidi interna preverjanja in lahko osnutek popravi, zavrne ali izrecno odobri. Ta zaslon ni dostopen nabavniku. **Povezano:** US-09–US-12 (F5, F6).
+Mojster izbere obstoječo stranko, opiše projekt ter pripravi postavke iz cenika ali ročno. Sistem izračuna popust, DDV in končni znesek; pošiljanje stranki je izrecno dejanje.
 
-## 4. Odobrena ponudba za nabavnika
+## 4. Odločitev stranke — F5, US-05
 
-[![Odobrena ponudba v pogledu nabavnika](wireframes/04-odobrena-ponudba.png)](wireframes/04-odobrena-ponudba.png)
+![Poslana ponudba za stranko](wireframes/08-ponudba-za-stranko.svg)
 
-Nabavnik vidi samo odobrene ponudbe za svoj RFQ. Prikazane so dogovorjene postavke, znesek in dobavni rok; notranji stroški in osnutki ponudnika niso prikazani. **Povezano:** US-13 (F7).
+Stranka vidi svojo poslano ponudbo brez internih materialov in jo sprejme ali zavrne. Sprejem ustvari osnutek računa in omogoči določitev termina; vsebina poslane ponudbe ostane zaklenjena.
+
+## 5. Izvedba in račun — F6–F7, US-06–US-07
+
+![Termin, izvedba in račun](wireframes/09-izvedba-in-racun.svg)
+
+Mojster določi termin, potrdi končano izvedbo, izda račun ter ročno evidentira celotno plačilo. Prehodi sledijo [podatkovnemu modelu](03-podatkovni-model.md). V MVP sta ponudba in račun dostopna v aplikaciji; e-pošta je poznejša F12.
+
+AI, ekipe in druge funkcionalnosti po MVP v teh skicah niso prikazani. Stare slike `01`–`04` v mapi `wireframes/` so zgodovinske skice prejšnjega RFQ-obsega in ne določajo trenutnega načrta.

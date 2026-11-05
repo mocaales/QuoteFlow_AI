@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="760" viewBox="0 0 1120 760" role="img" aria-labelledby="title desc">
+<title id="title">Uporabniški račun in prošnja za mojstra</title><desc id="desc">Načrtovani žični model; vloga stranka / admin. Ne predstavlja izvedenega zaslona.</desc>
+<style>text{font-family:Arial,sans-serif;fill:#243039;font-size:16px}.title{font-size:28px;font-weight:700}.label{font-size:19px;font-weight:700}.small{font-size:14px;fill:#52616b}.action{font-weight:700}</style>
+<rect width="1120" height="760" fill="#f5f6f7"/>
+<rect width="1120" height="78" fill="#e6eaed"/>
+<text x="32" y="36" class="label">QuoteFlow AI</text>
+<text x="32" y="61" class="small">Žični model · stranka / admin · načrtovano</text>
+<text x="32" y="126" class="title">Uporabniški račun in prošnja za mojstra</text>
+<rect x="32" y="160" width="510" height="510" rx="6" fill="white" stroke="#aeb8c0"/>
+<text x="54" y="196" class="label">Račun in prijava</text>
+<text x="54" y="234">Ime in priimek: Ana Novak</text>
+<text x="54" y="266">E-pošta: ana@example.test</text>
+<text x="54" y="298">Geslo: ••••••••••••</text>
+<text x="54" y="330">[Registracija]  [Prijava]</text>
+<text x="54" y="362">Po potrditvi e-pošte: vloga stranka</text>
+<text x="54" y="394">Podjetje za račun stranke ni obvezno.</text>
+<rect x="52" y="615" width="470" height="36" rx="3" fill="#e6eaed"/>
+<text x="64" y="639" class="action">Odpri prošnjo za mojstra</text>
+<rect x="566" y="160" width="522" height="510" rx="6" fill="white" stroke="#aeb8c0"/>
+<text x="588" y="196" class="label">Prošnja za mojstra</text>
+<text x="588" y="234">Podjetje: Gradnje Primer</text>
+<text x="588" y="266">Matična številka: 1234567000</text>
+<text x="588" y="298">Naslov: Primerna ulica 1</text>
+<text x="588" y="330">Davčna številka: neobvezno</text>
+<text x="588" y="362">Stanje: oddana → odobrena / zavrnjena</text>
+<text x="588" y="394">Admin odloča v ločenem pogledu.</text>
+<text x="588" y="426">Odobritev ustvari podjetje in lastništvo</text>
+<text x="588" y="458">ter vlogo mojstra pri tem podjetju.</text>
+<rect x="586" y="615" width="482" height="36" rx="3" fill="#e6eaed"/>
+<text x="598" y="639" class="action">Admin: Odobri / Zavrni</text>
+<text x="32" y="733" class="small">Primeri podatkov · obseg in pravice določajo dokumenti 02, 03 in 05.</text>
+</svg>

@@ -6,11 +6,11 @@ from app.supplier import router as supplier_router
 from app.database import database_readiness
 from app.pricing import CalculationInput, CalculationResult, calculate
 
-app = FastAPI(title="QuoteFlow AI", version="0.3.0", description="Identiteta, pravice, cenik, zaloge in pravila ponudnika.")
+app = FastAPI(title="QuoteFlow AI", version="0.4.0", description="Uporabniki, podjetja, cenik storitev in materialne zaloge.")
 
 @app.get('/api/health')
 def health():
-    return {"status": "ok", "stage": "supplier_data"}
+    return {"status": "ok", "stage": "company_projects"}
 
 @app.get('/api/ready')
 def ready():
@@ -34,7 +34,7 @@ async def database_error(request: Request, error: psycopg.Error):
     elif isinstance(error, psycopg.errors.NoDataFound):
         code, message = 404, 'Zapis ni na voljo.'
     elif isinstance(error, psycopg.errors.ExclusionViolation):
-        code, message = 409, 'Obdobje se prekriva z že načrtovanimi pravili. Preverite začetek in konec veljavnosti.'
+        code, message = 409, 'Vnos se prekriva z obstoječim zapisom.'
     elif isinstance(error, psycopg.IntegrityError):
         code, message = 422, 'Neveljavna povezava ali stanje podatkov. Osvežite seznam in preverite vnos.'
     else:

@@ -28,8 +28,8 @@ def main():
             where u.e_posta=%s and a.email_confirmed_at is not null''',(args.email.strip().lower(),)).fetchone()
         if user is None:
             raise ValueError('Račun ne obstaja ali e-pošta še ni potrjena. Najprej opravite registracijo.')
-        connection.execute("""insert into quoteflow.vloga_uporabnika(uporabnik_id,vloga) values(%s,'administrator')
-            on conflict(uporabnik_id) where vloga='administrator' do update set aktivna=true""",(user[0],))
+        connection.execute("""insert into quoteflow.vloga_uporabnika(uporabnik_id,vloga) values(%s,'admin')
+            on conflict(uporabnik_id,vloga) where podjetje_id is null do update set aktivna=true""",(user[0],))
     print('Vloga administratorja je dodeljena. V aplikaciji osvežite pravice.')
 
 if __name__=='__main__':

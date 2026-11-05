@@ -1,5 +1,8 @@
 # Predlog: nove vloge, osebna stranka in pregled uporabnikov
 
+> **Zgodovinski razvojni zapis:** novi primarni model in stanje uvedbe sta v [podatkovni-model.md](podatkovni-model.md). Opisi starih vlog, RFQ, cenika in pravil spodaj ne določajo nove sheme.
+
+
 **Datum:** 2026-11-03 · **Stanje:** zasnova za potrditev, brez implementacije.
 
 ## 1. Vprašanje in omejitve

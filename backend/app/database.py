@@ -11,9 +11,10 @@ from psycopg.conninfo import conninfo_to_dict
 load_dotenv(Path(__file__).resolve().parents[2] / '.env', override=False, interpolate=False)
 
 EXPECTED_TABLES = {
-    'uporabnik', 'podjetje', 'vloga_uporabnika', 'pravila_ponudnika',
-    'postavka_cenika', 'zaloga', 'povprasevanje', 'postavka_povprasevanja',
-    'ponudba', 'postavka_ponudbe',
+    'uporabnik', 'podjetje', 'vloga_uporabnika', 'prosnja_mojstra', 'projekt',
+    'ekipa', 'clan_ekipe', 'projekt_ekipa', 'postavka_cenika', 'vrsta_materiala',
+    'material', 'zaloga', 'sestava_cenika', 'ponudba', 'postavka_ponudbe',
+    'material_ponudbe', 'racun',
 }
 
 class DatabaseConfigurationError(Exception):

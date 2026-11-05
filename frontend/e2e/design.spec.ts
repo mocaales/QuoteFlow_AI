@@ -3,8 +3,8 @@ import { mockApi, signIn } from './fixtures';
 
 // The visual system as measurable rules (docs/razvoj/frontend-arhitektura.md, "Vizualni sistem").
 // Every screen is checked at desktop and phone width and saved for review in test-results/screens/.
-type Screen = 'pregled' | 'cenik' | 'zaloge' | 'pravila' | 'admin';
-const nav: Record<Exclude<Screen, 'pregled'>, string> = { cenik: 'Cenik', zaloge: 'Zaloge', pravila: 'Prodajna pravila', admin: 'Podjetja in pravice' };
+type Screen = 'pregled' | 'cenik' | 'zaloge' | 'materiali' | 'admin';
+const nav: Record<Exclude<Screen, 'pregled'>, string> = { cenik: 'Cenik', zaloge: 'Zaloge', materiali: 'Materiali', admin: 'Podjetja in pravice' };
 const phone = (page: Page) => page.viewportSize()!.width < 800;
 
 async function open(page: Page, screen: Screen) {
@@ -83,14 +83,14 @@ async function audit(page: Page) {
 }
 
 async function check(page: Page, screen: string, project: string) {
- await page.evaluate(async () => { await document.fonts.ready; await Promise.all(document.getAnimations().map(a => a.finished)); });
+ await page.evaluate(async () => { await document.fonts.ready; await Promise.allSettled(document.getAnimations().map(a => a.finished)); });
  await page.screenshot({ path: `test-results/screens/${screen}-${project}.png`, fullPage: true });
  expect(await audit(page)).toEqual([]);
 }
 
-test.describe('Prijavljen ponudnik in administrator', () => {
+test.describe('Prijavljen mojster in admin', () => {
  test.beforeEach(async ({ page }) => { await mockApi(page); await signIn(page); });
- for (const screen of ['pregled', 'cenik', 'zaloge', 'pravila', 'admin'] as const) {
+ for (const screen of ['pregled', 'cenik', 'zaloge', 'materiali', 'admin'] as const) {
   test(`zaslon ${screen} ustreza vizualnemu sistemu`, async ({ page }, info) => {
    await open(page, screen);
    await check(page, screen, info.project.name);
@@ -100,7 +100,7 @@ test.describe('Prijavljen ponudnik in administrator', () => {
  test('ikona za urejanje ob prehodu pokaže namig', async ({ page }) => {
   test.skip(phone(page), 'Telefon nima prehoda z miško; ime gumba ostane dostopno.');
   await open(page, 'cenik');
-  const edit = page.getByRole('button', { name: 'Uredi Kroglični ležaj SKF 6205-2RS' });
+  const edit = page.getByRole('button', { name: 'Uredi Rušenje estriha' });
   await expect(edit).toHaveAttribute('data-tip', 'Uredi');
   await edit.hover();
   await expect.poll(() => edit.evaluate(el => getComputedStyle(el, '::after').content)).toBe('"Uredi"');
@@ -114,6 +114,22 @@ test.describe('Prijavljen ponudnik in administrator', () => {
   await page.getByRole('button', { name: 'Nova postavka' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await check(page, 'cenik-panel', info.project.name);
+ });
+
+ test('material in zaloga imata pregleden panel, tudi po osvežitvi pravic', async ({ page }, info) => {
+  await open(page, 'materiali');
+  await page.getByRole('button', { name: 'Nov material' }).click();
+  await page.getByLabel('Naziv', { exact: true }).fill('Neshranjeno lepilo');
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect(page.getByLabel('Naziv', { exact: true })).toHaveValue('Neshranjeno lepilo');
+  await check(page, 'material-panel', info.project.name);
+  await page.keyboard.press('Escape');
+  if (phone(page)) await page.getByRole('button', { name: 'Meni' }).click();
+  await page.getByRole('navigation', { name: 'Glavna navigacija' }).getByRole('button', { name: 'Zaloge' }).click();
+  await page.getByRole('button', { name: 'Zaloga za Lepilo za ploščice: Celje' }).click();
+  await expect(page.getByLabel('Količina (kg)')).toHaveValue('0');
+  await expect(page.getByLabel('Lokacija')).toHaveValue('Celje');
+  await check(page, 'zaloga-panel', info.project.name);
  });
 
  test('navigacija se na telefonu zloži v meni', async ({ page }) => {
@@ -136,6 +152,7 @@ test('napaka pri nalaganju cenika ohrani okvir zaslona', async ({ page }, info) 
  await mockApi(page, { catalogStatus: 503 }); await signIn(page);
  await open(page, 'cenik').catch(() => undefined);
  await expect(page.getByRole('alert')).toContainText('Podatkovna baza trenutno ni na voljo.');
+ await expect(page.getByRole('heading', { name: 'Dodajte prvo postavko' })).toHaveCount(0);
  await check(page, 'cenik-napaka', info.project.name);
 });
 

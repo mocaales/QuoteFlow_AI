@@ -4,6 +4,8 @@
 - **Datum:** 2026-10-20
 - **Izvedba:** izvedena; Auth, aktivne seje in enotne poslovne vloge so vključeni v API in vmesnik
 
+> Vloge in njihov obseg posodablja [ADR-0010](0010-projekti-podjetja-in-vec-vlog.md); ločena identiteta in poslovne dodelitve ostajajo.
+
 ## Kontekst in problem
 
 Isti človek lahko deluje v več podjetjih in v različnih vlogah; lahko je tudi registriran brez članstva. Globalni administrator ni član vsakega podjetja. Prijavna identiteta in poslovna pooblastila imata različni življenjski dobi.

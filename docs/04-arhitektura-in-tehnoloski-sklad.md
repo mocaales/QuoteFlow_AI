@@ -1,39 +1,35 @@
 # Arhitektura in tehnološki sklad
 
-## Poslovni tok
+## Deli sistema
 
-1. Nabavnik z aktivno pravico `nabavnik` odda RFQ za svoje podjetje. Zahteve so prosto opisane; niso vezane na cenik enega ponudnika.
-2. Ročna izbira ali sistemsko ujemanje ustvari po eno ponudbo v stanju `povabljena` za vsako registrirano podjetje ponudnika. Neobvezni kontaktni uporabnik mora imeti pri njem aktivno pravico `ponudnik`.
-3. Backend posreduje omejenemu AI-agentu besedilo RFQ in dovoljene podatke potrjenega cenika blaga ali storitev. Agent vrne strukturiran predlog razumevanja in ujemanja. Manjkajoče ali dvoumne podatke označi za pregled.
-4. Backend za vsakega izbranega ponudnika pripravi ločen osnutek. Programska pravila preverijo ceno, strošek, maržo, morebitno zalogo, popust in rok; agent teh vrednosti ne potrjuje.
-5. Ponudnik osnutek popravi, zavrne ali odobri. Ob odobritvi sistem še enkrat preveri pravice in izračune ter v eni transakciji zabeleži odobritelja, čas in stanje `odobrena` ter zaklene ponudbo s postavkami. Nabavnik vidi le odobreno ponudbo brez internih stroškov.
-6. Obvestila v aplikaciji in po e-pošti so F10, poznejša funkcionalnost. Nastanejo iz zabeleženega dogodka in ne določajo veljavnosti odobritve.
+![Arhitektura aplikacije](diagrams/04-arhitektura.svg)
 
-## Deli sistema in komunikacija
+[Uredi v draw.io](diagrams/04-arhitektura.drawio) · [Odpri v polni velikosti](diagrams/04-arhitektura.svg)
 
-![Arhitektura QuoteFlow AI in komunikacija med deli sistema](diagrams/04-arhitektura.svg)
+Brskalnik uporablja Supabase za prijavo, poslovna dejanja pa izvaja prek FastAPI. API preverja identiteto, aktivno sejo, vlogo in podjetje. PostgreSQL hrani [17 povezanih tabel](03-podatkovni-model.md); omejitve in RLS dodatno varujejo povezave ter dostop. Migracije so edini vir sprememb sheme.
 
-[Odpri diagram v polni velikosti](diagrams/04-arhitektura.svg) · [Uredi izvorno datoteko Draw.io](diagrams/04-arhitektura.drawio)
+## Pravice in poslovni proces
 
-API pri vsakem zahtevku preveri uporabnika, aktivno dodelitev pravice in podjetje. PostgreSQL RLS je dodatna meja za branje podatkov med podjetji; za pisanje veljajo ozki strežniški postopki. AI uporablja le orodja za branje potrjenih podatkov, nima pravice odobritve ali pošiljanja e-pošte. SMTP-pošiljatelj dela šele po uspešnem zapisu poslovnega dogodka; ob napaki obvestilo poskusi znova brez podvojitve sporočila. E-pošta vsebuje le obvestilo in povezavo na prijavo v aplikacijo.
+`admin` in `stranka` sta globalni vlogi, `mojster` in `delavec` sta vezani na podjetje. Lastnik podjetja mora biti njegov aktivni mojster. Pravica mojstra pri enem podjetju ne daje pravic pri drugem. Delavec vidi projekte prek svojih ekip, stranka samo svoje projekte in dovoljene dokumente.
 
-## Tehnološki sklad
+Projekt poteka od pregleda/ogleda prek ponudbe, termina in izvedbe do obračuna in plačila. Poslane ponudbe in izdani računi ohranijo podatke dokumenta; poslovni dogodki s povezanimi spremembami se izvajajo transakcijsko. Izračuni uporabljajo decimalne vrednosti, ne jezikovnega modela.
 
-| Del | Izbira | Razlog |
-|---|---|---|
-| Spletni vmesnik | React, TypeScript, Vite | Obrazci in pregled stanj z nadzorovanimi podatkovnimi tipi. |
-| Strežniški del | Python, FastAPI | En API za pravice, poslovna pravila in integracijo modela. |
-| Podatki in identiteta | Supabase PostgreSQL, Supabase Auth | Relacije, transakcije, RLS in en vir prijavne identitete. |
-| AI-agent | [OpenAI GPT-6 Luna](https://developers.openai.com/api/docs/models/gpt-6-luna), Responses API | Omejena analiza besedila; model podpira klicanje funkcij in strukturiran izhod. |
-| E-pošta F10 | Vrsta obvestil, ločen pošiljatelj, SMTP | Dostava se lahko ponovi, ne da bi vplivala na odobreno ponudbo. |
-| Lokalni razvoj | Docker Compose, Supabase CLI, pytest | Ponovljiv zagon, migracije in preverjanje pravil. |
+## Tehnologije in razlogi
 
-## Arhitekturne odločitve
+| Del | Izbira in razlog |
+|---|---|
+| Frontend | React, TypeScript, Vite: obrazci, pregledi in preverljivi tipi; organizacija po funkcionalnostih. |
+| Backend | Python, FastAPI: enotna meja za pravice in poslovne postopke, validacija zahtevkov. |
+| Podatkovna baza | Supabase PostgreSQL: relacije, transakcije, FK, omejitve in RLS. |
+| Identiteta | Supabase Auth: upravljana prijava; poslovne pravice so ločene od prijavne identitete. |
+| Lokalni razvoj | Docker Compose za frontend/backend, oddaljena baza Supabase; pytest, Vitest in Playwright za preverjanje. |
 
-- **En poslovni proces za oba načina izbire:** oba ustvarita ponudbo v stanju `povabljena`; razlog in izvor izbire sta zapisana na njej. Ločena tabela vabil ni potrebna.
-- **Ena tabela za dodelitve pravic:** uporabnik lahko pri različnih podjetjih opravlja različni nalogi; globalni administrator nima lažnega članstva v podjetju.
-- **Ena ponudba od izbire do odobritve:** stanje in zapis odobritve sta na ponudbi. Ob odobritvi se ponudba in njene postavke zaklenejo; nabavnik dobi samo dovoljena javna polja.
-- **AI predlaga, program preveri, človek odobri:** model ne določa poslovno zavezujočih cen ali zalog.
-- **E-pošta ni transakcija odobritve:** odobrena ponudba ostane veljavna tudi ob začasni napaki SMTP; pošiljanje in stanje dostave se vodita ločeno.
+## Načrtovane razširitve
 
-Podrobne entitete, ključi in povezave so v [podatkovnem modelu](03-podatkovni-model.md). To je **ciljna arhitektura**. Model iz dokumenta 03 ter registracija, prijava, preverjanje sej in administracija podjetij in vlog ter ponudnikov cenik, zaloge in različice pravil so uvedeni. RFQ-proces, agent, odobritev ter e-pošta še niso vključeni v uporabniške postopke. Spletno odkrivanje dodatnih ponudnikov in dovoljeno pridobivanje javnih podatkov ostajata nadgradnji; tak podatek ni potrjena ponudba.
+Diagram prikazuje osnovno arhitekturo. [Obseg](02-funkcionalnosti-in-obseg.md) določa 7 MVP funkcionalnosti in nadaljnji razvoj; uvedba sheme še ne pomeni izvedenih uporabniških postopkov.
+
+- **AI-pomoč F16–F20:** backend bo omejil dostop na dovoljene podatke projekta in njegovega podjetja. Agent bo predlagal analizo, vsebino osnutka ali povzetek; mojster predloge pregleda. Cene, DDV, količine in zalogo preverja deterministična programska logika. AI ne objavlja dokumentov, ne sprejema ponudb in ne spreminja faz projekta; manjkajoče podatke označi, ne ugiba. Ponudnik LLM, model in izvedba omejenih orodij zahtevajo odločitev pred implementacijo.
+- **E-pošta F12:** po poslovnem dogodku bo backend sprožil obvestilo prek izbranega ponudnika. Dostava in ponovni poskusi potrebujejo dodatno evidenco; e-pošta ni pogoj za oddajo ponudbe v aplikaciji v MVP F5.
+- **Priloge F21 in opombe F22:** zahtevajo dodatno shrambo oziroma tabele in preverjanje dostopa. Interne opombe morajo ostati ločene od vsebine za stranko.
+
+Te razširitve še niso uvedene. Prvotni RFQ in samodejno iskanje ponudnikov nista del novega procesa. Lokalni zagon je v [README](../README.md), stanje izvedbe pa v [razvojnih navodilih](razvoj/podatkovni-model.md).
