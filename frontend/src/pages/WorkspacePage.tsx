@@ -3,6 +3,7 @@ import type { Session, SupabaseClient } from '@supabase/supabase-js';
 import { getProfile, getCompanies } from '../features/identity/api';
 import type { Profil, Podjetje } from '../features/identity/types';
 import Admin from '../features/administration/components/Admin';
+import MasterApplication from '../features/identity/components/MasterApplication';
 import SupplierWorkspace from '../features/supplier/components/SupplierWorkspace';
 import type { SupplierTab } from '../features/supplier/types';
 import Brand from '../components/Brand';
@@ -10,7 +11,7 @@ import Icon from '../components/Icon';
 import { ApiError } from '../services/api';
 import IconButton from '../components/IconButton';
 
-type View = SupplierTab | 'overview' | 'admin';
+type View = SupplierTab | 'overview' | 'admin' | 'prosnja';
 export default function WorkspacePage({ client, session }: { client: SupabaseClient; session: Session }) {
  const [profile, setProfile] = useState<Profil | null>(null);
  const [companies, setCompanies] = useState<Podjetje[]>([]);
@@ -61,7 +62,7 @@ export default function WorkspacePage({ client, session }: { client: SupabaseCli
   <header className="mobile-bar"><IconButton icon={menu ? 'close' : 'menu'} label="Meni" tip={menu ? 'Zapri meni' : 'Odpri meni'} className="tip-right" aria-expanded={menu} aria-controls="app-menu" onClick={() => setMenu(!menu)}/><Brand/></header>
   <aside className="app-sidebar" id="app-menu"><Brand/>
    {!!ownCompanies.length && <label className="company-select">Aktivno podjetje<select value={companyId} disabled={busy} onChange={e => { setCompanyId(e.target.value); go('overview'); }}>{ownCompanies.map(c => <option key={c.id} value={c.id}>{c.naziv}</option>)}</select></label>}
-   <nav aria-label="Glavna navigacija">{item('overview', 'grid', 'Pregled')}
+   <nav aria-label="Glavna navigacija">{item('overview', 'grid', 'Pregled')}{item('prosnja', 'user-plus', 'Prošnja za mojstra')}
     {supplier && <><p className="nav-label nav-group">Podatki podjetja</p>{item('cenik', 'list', 'Cenik')}{item('zaloge', 'stock', 'Zaloge')}{item('materiali', 'list', 'Materiali')}</>}
     {admin && <><p className="nav-label nav-group">Upravljanje</p>{item('admin', 'users', 'Podjetja in pravice')}</>}
    </nav>
@@ -71,7 +72,7 @@ export default function WorkspacePage({ client, session }: { client: SupabaseCli
    </div>
   </aside>
   <main className="app-main"><div className="sheet">{error && <p role="alert" className="alert">{error}</p>}{!profile && !error && <p role="status" className="loading-state">Preverjam dostop …</p>}
-  {profile && <>{activeView === 'admin' ? <Admin client={client}/> : supplier && company && (activeView === 'cenik' || activeView === 'zaloge' || activeView === 'materiali') ? <SupplierWorkspace key={company.id} client={client} companyId={company.id} tab={activeView}/> : <>
+  {profile && <>{activeView === 'prosnja' ? <MasterApplication client={client}/> : activeView === 'admin' ? <Admin client={client}/> : supplier && company && (activeView === 'cenik' || activeView === 'zaloge' || activeView === 'materiali') ? <SupplierWorkspace key={company.id} client={client} companyId={company.id} tab={activeView}/> : <>
    <div className="page-title"><div><h1>{company ? company.naziv : 'Moj račun'}</h1><p>{company ? `Vaše vloge pri podjetju: ${rolesAt(company.id)}.` : 'Pregled vaših poslovnih dostopov. Projekti in ponudbe bodo na voljo v naslednjih sklopih.'}</p></div></div>
    {!profile.vloge.length ? <section className="empty-state"><h2>Dostop še ni dodeljen</h2><p>Račun je ustvarjen. Za podjetje potrebujete ustrezno dodelitev poslovne vloge.</p></section> : <div className="overview">
     <div className="overview-actions">

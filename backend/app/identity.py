@@ -1,9 +1,10 @@
 """Verified identities, company ownership and narrowly scoped administration."""
 from typing import Literal
+from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, field_validator, model_validator
 
 from .access import administrator, session_database
 from .auth import Principal, current_user, auth_config
@@ -82,6 +83,32 @@ class AdminRoleRow(RoleRow):
     e_posta: str
     naziv: str | None
 
+class ProsnjaInput(Input):
+    naziv_podjetja: str = Field(min_length=1, max_length=200)
+    maticna_stevilka: str = Field(min_length=1, max_length=30)
+    davcna_stevilka: str | None = Field(default=None, min_length=1, max_length=30)
+    naslov_podjetja: str = Field(min_length=1, max_length=300)
+
+class ProsnjaDecision(Input):
+    odobri: StrictBool
+
+class ProsnjaRow(BaseModel):
+    id: UUID
+    uporabnik_id: UUID
+    naziv_podjetja: str
+    maticna_stevilka: str
+    davcna_stevilka: str | None
+    naslov_podjetja: str
+    stanje: Literal['oddana', 'odobrena', 'zavrnjena']
+    podjetje_id: UUID | None
+    oddano_ob: datetime
+    odloceno_ob: datetime | None
+
+class AdminProsnjaRow(ProsnjaRow):
+    e_posta: str
+    ime: str
+    priimek: str
+
 @router.get('/config')
 def configuration():
     return auth_config()
@@ -135,3 +162,23 @@ def assign_role(data: RoleInput, db=Depends(administrator)):
 @router.patch('/admin/vloge/{role_id}', response_model=RoleRow)
 def update_role(role_id: UUID, data: RoleUpdate, db=Depends(administrator)):
     return db.execute('select * from quoteflow_private.aktiviraj_vlogo(%s,%s)', (role_id, data.aktivna)).fetchone()
+
+@router.post('/prosnje', status_code=201, response_model=ProsnjaRow)
+def submit_request(data: ProsnjaInput, db=Depends(session_database)):
+    return db.execute('select * from quoteflow_private.oddaj_prosnjo(%s,%s,%s,%s)',
+        (data.naziv_podjetja, data.maticna_stevilka, data.davcna_stevilka, data.naslov_podjetja)).fetchone()
+
+@router.get('/prosnje', response_model=list[ProsnjaRow])
+def own_requests(user: Principal = Depends(current_user), db=Depends(session_database)):
+    return db.execute('''select id,uporabnik_id,naziv_podjetja,maticna_stevilka,davcna_stevilka,naslov_podjetja,stanje,podjetje_id,oddano_ob,odloceno_ob
+        from quoteflow.prosnja_mojstra where uporabnik_id=%s order by oddano_ob desc,id''', (user.id,)).fetchall()
+
+@router.get('/admin/prosnje', response_model=list[AdminProsnjaRow])
+def admin_requests(db=Depends(administrator)):
+    return db.execute('''select p.id,p.uporabnik_id,p.naziv_podjetja,p.maticna_stevilka,p.davcna_stevilka,p.naslov_podjetja,p.stanje,p.podjetje_id,p.oddano_ob,p.odloceno_ob,
+        u.e_posta,u.ime,u.priimek from quoteflow.prosnja_mojstra p join quoteflow.uporabnik u on u.id=p.uporabnik_id
+        order by (p.stanje='oddana') desc,p.oddano_ob desc,p.id''').fetchall()
+
+@router.post('/admin/prosnje/{prosnja_id}/odlocitev', response_model=ProsnjaRow)
+def decide_request(prosnja_id: UUID, data: ProsnjaDecision, db=Depends(administrator)):
+    return db.execute('select * from quoteflow_private.odloci_prosnjo(%s,%s)', (prosnja_id, data.odobri)).fetchone()

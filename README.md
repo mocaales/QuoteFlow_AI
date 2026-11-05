@@ -2,9 +2,9 @@
 
 Večpodjetniška spletna aplikacija za vodenje projektov, ekip, cenika, materialov, ponudb in računov. Uporabnik lahko nastopa kot stranka ter kot mojster ali delavec pri različnih podjetjih.
 
-**Izvedeno:** nova relacijska shema je uvedena v Supabase. Delujejo registracija/prijava, nove vloge, administratorsko upravljanje uporabnikov in podjetij z lastnikom ter cenik storitev, materiali in zaloga po lokacijah.
+**Izvedeno:** nova relacijska shema je uvedena v Supabase. Delujejo registracija/prijava, nove vloge, administratorsko upravljanje uporabnikov in podjetij z lastnikom, prošnja za mojstra z administratorsko odločitvijo (odobritev ustvari podjetje, lastništvo in vlogo mojster) ter cenik storitev, materiali in zaloga po lokacijah.
 
-**Naslednji razvoj:** uporabniški postopki za prošnje mojstrov, projekte, ekipe, ponudbe in račune. Baza že vsebuje njihove omejitve in transakcijske postopke; API in vmesnik celotnega življenjskega cikla še nista uvedena. [Stanje razvoja](docs/razvoj/podatkovni-model.md).
+**Naslednji razvoj:** uporabniški postopki za projekte, ekipe, ponudbe in račune. Baza že vsebuje njihove omejitve in transakcijske postopke; API in vmesnik celotnega življenjskega cikla še nista uvedena. [Stanje razvoja](docs/razvoj/podatkovni-model.md).
 
 **Načrtovani obseg:** [22 funkcionalnosti, od tega 7 MVP, in 5 možnih nadgradenj](docs/02-funkcionalnosti-in-obseg.md). AI-pomoč pri analizi projekta, pripravi in pregledu osnutkov ter povzetkih je načrtovana po MVP (F16–F20) in še ni izvedena.
 
@@ -71,5 +71,6 @@ docker compose down
 - [Arhitekturne odločitve](docs/adr/)
 - [Uvedba novega podatkovnega modela](docs/razvoj/podatkovni-model.md)
 - [Zgodovina US-01–US-02: identiteta in pravice](docs/razvoj/us-01-us-02-identiteta-in-pravice.md)
+- [US-01: prošnja mojstra (#33, #34)](docs/razvoj/us-01-prosnja-mojstra.md)
 - [Organizacija frontenda](docs/razvoj/frontend-arhitektura.md)
 - [Zgodovina US-03–US-05: podatki ponudnika](docs/razvoj/us-03-us-05-podatki-ponudnika.md)

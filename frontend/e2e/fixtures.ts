@@ -30,6 +30,14 @@ const roles=[
  {id:'r3',uporabnik_id:'u2',e_posta:'marko@example.test',podjetje_id:B,naziv:companies[1].naziv,vloga:'delavec',aktivna:true},
 ];
 
+export const ownRequests=[
+ {id:'p1',uporabnik_id:USER.id,naziv_podjetja:'Parketarstvo Ana s.p.',maticna_stevilka:'5551234000',davcna_stevilka:null,naslov_podjetja:'Glavna cesta 5, Ptuj',stanje:'zavrnjena',podjetje_id:null,oddano_ob:'2026-10-20T09:30:00Z',odloceno_ob:'2026-10-21T08:00:00Z'},
+];
+export const masterRequests=[
+ {id:'p2',uporabnik_id:'u2',naziv_podjetja:'Elektro Kos d.o.o.',maticna_stevilka:'6667890000',davcna_stevilka:'SI66678900',naslov_podjetja:'Ulica 2, Celje',stanje:'oddana',podjetje_id:null,oddano_ob:'2026-11-03T10:15:00Z',odloceno_ob:null,e_posta:'marko@example.test',ime:'Marko',priimek:'Kos'},
+ {id:'p3',uporabnik_id:'u3',naziv_podjetja:'Zidarstvo Horvat s.p.',maticna_stevilka:'7778901000',davcna_stevilka:null,naslov_podjetja:'Trg 3, Kranj',stanje:'odobrena',podjetje_id:B,oddano_ob:'2026-10-25T12:00:00Z',odloceno_ob:'2026-10-26T09:00:00Z',e_posta:'jure@example.test',ime:'Jure',priimek:'Horvat'},
+];
+
 export type Mock = { catalogStatus?: number };
 export async function mockApi(page: Page, options: Mock = {}) {
  await page.route(`${SUPABASE}/**`, route => route.fulfill({ status: 200, json: {} }));
@@ -44,6 +52,8 @@ export async function mockApi(page: Page, options: Mock = {}) {
   if (path.endsWith('/vrste-materiala')) return json(kinds);
   if (path.endsWith('/materiali')) return json(materials);
   if (path.endsWith('/zaloga')) return json(stocks[path.split('/').at(-2)!] ?? []);
+  if (path === '/prosnje') return json(route.request().method() === 'POST' ? ownRequests[0] : ownRequests, route.request().method() === 'POST' ? 201 : 200);
+  if (path === '/admin/prosnje') return json(masterRequests);
   if (path === '/admin/uporabniki') return json(users);
   if (path === '/admin/vloge') return json(roles);
   return json({ detail: 'Ni najdeno.' }, 404);
