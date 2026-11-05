@@ -6,6 +6,8 @@
 
 Migracija `20261103211654_v2_projects_roles_catalog.sql` je uvedla 17 tabel s prisilnim RLS. Ohranila je tri prijavne identitete Supabase Auth in obstoječo administratorsko dodelitev kot `admin`. Potrjeni računi dobijo globalno vlogo `stranka`; `mojster/delavec` veljata samo pri določenem podjetju.
 
+Migracija `20261105114405_prosnja_varnost.sql` je bila v Supabase uvedena 5. 11. 2026. Omeji uporabnika na eno oddano prošnjo za mojstra, ob odobritvi ponovno preveri vlagatelja in matično številko ter uvede kode SQLSTATE `QFP01`–`QFP04` za pričakovane konflikte. Pred uvedbo je preverjanje pokazalo, da v bazi ni podvojenih oddanih prošenj.
+
 Dve stari podjetji in preostali stari poslovni podatki so v omejenem arhivu `quoteflow_legacy_20261103`, stare interne funkcije v `quoteflow_private_legacy_20261103`. Aplikacijske vloge do arhiva nimajo dostopa. Nova podjetja se niso ugibala iz starih podatkov: ustvarijo se z izrecnim lastnikom in registracijskimi podatki. Pred uvedbo je nastala lokalna varnostna kopija, izključena iz Gita.
 
 ## Izvedeno in naslednji sklop
