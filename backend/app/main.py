@@ -1,9 +1,8 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-import psycopg
-from app.identity import router as identity_router
-from app.supplier import router as supplier_router
+from app.routers import identity, admin, prosnje, cenik, materiali, projekti
 from app.database import database_readiness
+from app.errors import register
 from app.pricing import CalculationInput, CalculationResult, calculate
 
 app = FastAPI(title="QuoteFlow AI", version="0.4.0", description="Uporabniki, podjetja, cenik storitev in materialne zaloge.")
@@ -24,32 +23,10 @@ def demo_calculate(data: CalculationInput):
     # Public demonstration endpoint: inputs are not trusted supplier records.
     return calculate(data)
 
-app.include_router(identity_router, prefix='/api')
-app.include_router(supplier_router, prefix='/api')
+for module in (identity, admin, prosnje, cenik, materiali, projekti):
+    app.include_router(module.router, prefix='/api')
 
-# Business conflicts raised by quoteflow_private functions with explicit SQLSTATEs.
-CONFLICTS = {
-    'QFP01': 'Prošnja je že obravnavana.',
-    'QFP02': 'Že imate oddano prošnjo, ki čaka na odločitev.',
-    'QFP03': 'Vlagatelj ne izpolnjuje pogojev za vlogo mojstra (potrjena e-pošta in aktivna vloga stranke ali delavca).',
-    'QFP04': 'Podjetje ali oddana prošnja s to matično številko že obstaja.',
-}
-
-@app.exception_handler(psycopg.Error)
-async def database_error(request: Request, error: psycopg.Error):
-    if error.sqlstate in CONFLICTS:
-        code, message = 409, CONFLICTS[error.sqlstate]
-    elif isinstance(error, psycopg.errors.InsufficientPrivilege):
-        code, message = 403, 'Za to dejanje nimate pravice.'
-    elif isinstance(error, psycopg.errors.NoDataFound):
-        code, message = 404, 'Zapis ni na voljo.'
-    elif isinstance(error, psycopg.errors.ExclusionViolation):
-        code, message = 409, 'Vnos se prekriva z obstoječim zapisom.'
-    elif isinstance(error, psycopg.IntegrityError):
-        code, message = 422, 'Neveljavna povezava ali stanje podatkov. Osvežite seznam in preverite vnos.'
-    else:
-        code, message = 503, 'Podatkovna baza trenutno ni na voljo.'
-    return JSONResponse(status_code=code, content={'detail':message})
+register(app)
 
 @app.middleware('http')
 async def private_responses(request: Request, call_next):

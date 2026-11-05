@@ -5,3 +5,4 @@ export type Stock = { lokacija: string; kolicina: string };
 export type MaterialInput = { vrsta_materiala_id: string; sifra: string; naziv: string; enota: string; cena_na_enoto: string; aktiven: boolean };
 export type Material = MaterialInput & { id: string; zaloge: Stock[] };
 export type SupplierTab = 'cenik' | 'materiali' | 'zaloge';
+export type CompositionLine = { material_id: string; sifra: string; naziv: string; enota: string; aktiven: boolean; kolicina_na_enoto: string };

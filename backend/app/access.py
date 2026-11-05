@@ -35,6 +35,11 @@ def administrator(db=Depends(session_database)):
         raise HTTPException(403, 'Potrebna je vloga administratorja.')
     return db
 
+def customer(db=Depends(session_database)):
+    if not db.execute('select quoteflow_private.stranka() as allowed').fetchone()['allowed']:
+        raise HTTPException(403, 'Za to dejanje nimate pravice.')
+    return db
+
 ROLE_NAMES = {'mojster': 'mojstra', 'delavec': 'delavca'}
 
 @cache

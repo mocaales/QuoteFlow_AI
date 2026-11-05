@@ -3,8 +3,8 @@ import { mockApi, signIn } from './fixtures';
 
 // The visual system as measurable rules (docs/razvoj/frontend-arhitektura.md, "Vizualni sistem").
 // Every screen is checked at desktop and phone width and saved for review in test-results/screens/.
-type Screen = 'pregled' | 'cenik' | 'zaloge' | 'materiali' | 'admin' | 'prosnja';
-const nav: Record<Exclude<Screen, 'pregled'>, string> = { cenik: 'Cenik', zaloge: 'Zaloge', materiali: 'Materiali', admin: 'Podjetja in pravice', prosnja: 'Prošnja za mojstra' };
+type Screen = 'pregled' | 'cenik' | 'zaloge' | 'materiali' | 'admin' | 'prosnja' | 'projekti' | 'moji';
+const nav: Record<Exclude<Screen, 'pregled'>, string> = { cenik: 'Cenik', zaloge: 'Zaloge', materiali: 'Materiali', admin: 'Podjetja in pravice', prosnja: 'Prošnja za mojstra', projekti: 'Projekti', moji: 'Moji projekti' };
 const phone = (page: Page) => page.viewportSize()!.width < 800;
 
 async function open(page: Page, screen: Screen) {
@@ -12,7 +12,7 @@ async function open(page: Page, screen: Screen) {
  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
  if (screen === 'pregled') return;
  if (phone(page)) await page.getByRole('button', { name: 'Meni' }).click();
- await page.getByRole('navigation', { name: 'Glavna navigacija' }).getByRole('button', { name: nav[screen] }).click();
+ await page.getByRole('navigation', { name: 'Glavna navigacija' }).getByRole('button', { name: nav[screen], exact: true }).click();
  await expect(page.getByRole('heading', { level: 1, name: nav[screen] })).toBeVisible();
  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
 }
@@ -90,7 +90,7 @@ async function check(page: Page, screen: string, project: string) {
 
 test.describe('Prijavljen mojster in admin', () => {
  test.beforeEach(async ({ page }) => { await mockApi(page); await signIn(page); });
- for (const screen of ['pregled', 'cenik', 'zaloge', 'materiali', 'admin', 'prosnja'] as const) {
+ for (const screen of ['pregled', 'cenik', 'zaloge', 'materiali', 'admin', 'prosnja', 'projekti', 'moji'] as const) {
   test(`zaslon ${screen} ustreza vizualnemu sistemu`, async ({ page }, info) => {
    await open(page, screen);
    await check(page, screen, info.project.name);
@@ -149,6 +149,40 @@ test.describe('Prijavljen mojster in admin', () => {
   await expect(page.getByLabel('Količina (kg)')).toHaveValue('0');
   await expect(page.getByLabel('Lokacija')).toHaveValue('Celje');
   await check(page, 'zaloga-panel', info.project.name);
+ });
+
+ test('materialna sestava postavke odpre panel z vrsticami', async ({ page }, info) => {
+  await open(page, 'cenik');
+  await page.getByRole('button', { name: /Materialna sestava.*Polaganje keramike/ }).click();
+  const panel = page.getByRole('dialog');
+  await expect(panel).toBeVisible();
+  await expect(panel.getByText('Lepilo za ploščice · 4,5 kg na m2')).toBeVisible();
+  await expect(panel.getByText('Cement · 1,2 kg na m2')).toBeVisible();
+  await expect(panel.getByLabel('Material')).toBeVisible();
+  await expect(panel.getByLabel('Količina na enoto')).toBeVisible();
+  await expect(panel.getByRole('button', { name: 'Dodaj v sestavo' })).toBeVisible();
+  await expect(panel.getByRole('button', { name: 'Odstrani Cement' })).toBeVisible();
+  await check(page, 'sestava-panel', info.project.name);
+ });
+
+ test('projekti mojstra so združeni po fazah z obrazcem za nov projekt', async ({ page }, info) => {
+  await open(page, 'projekti');
+  for (const phase of ['Pregled', 'Ponudba', 'Izvedba']) await expect(page.getByRole('heading', { name: phase })).toBeVisible();
+  await expect(page.getByText('Menjava oken')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Zahtevaj ogled Obnova kopalnice' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Zahtevaj ogled Menjava oken' })).toHaveCount(0);
+  for (const label of ['E-pošta stranke', 'Naziv', 'Lokacija izvedbe', 'Opis']) await expect(page.getByLabel(label)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Ustvari projekt' })).toBeVisible();
+  await check(page, 'projekti', info.project.name);
+ });
+
+ test('stranka vidi svoje projekte samo za branje', async ({ page }, info) => {
+  await open(page, 'moji');
+  await expect(page.getByText('Beljenje stanovanja')).toBeVisible();
+  await expect(page.getByText('Gradnje Kos d.o.o.').first()).toBeVisible();
+  await expect(page.getByText('Kranj, Trg 3')).toBeVisible();
+  await expect(page.getByRole('button', { name: /^(Uredi|Zahtevaj ogled)/ })).toHaveCount(0);
+  await check(page, 'moji-projekti', info.project.name);
  });
 
  test('navigacija se na telefonu zloži v meni', async ({ page }) => {

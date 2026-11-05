@@ -10,6 +10,7 @@ Koda v `frontend/src/` je razdeljena po odgovornostih:
 | `features/administration/` | Administratorski obrazci ter API-klici za podjetja in poslovne vloge. |
 | `features/calculator/` | API-klici in tipi demonstracijskega kalkulatorja. Izračun izvaja backend. |
 | `features/supplier/` | Cenik, zaloge in prodajna pravila: obrazci, pogledi, tipi in API-klici. |
+| `features/projects/` | Projekti: pogled mojstra po fazah, obrazec in pogled stranke (samo branje). |
 | `components/` | Skupni elementi `Brand`, `Icon` in modalni stranski panel `Drawer`. |
 | `utils/` | Oblikovanje denarja, količin, odstotkov in časa. |
 | `lib/` | Enkratna nastavitev odjemalca Supabase Auth. |

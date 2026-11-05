@@ -3,7 +3,8 @@ from uuid import uuid4
 
 import pytest
 from pydantic import ValidationError
-from app.supplier import CatalogInput, StockInput
+from app.routers.cenik import CatalogInput
+from app.routers.materiali import StockInput
 
 ITEM = {'naziv': 'Rušenje estriha', 'opis': 'Odstranitev in odvoz', 'vrsta_dela': 'Rušenje', 'enota': 'm2', 'cena_na_enoto': '12.4500', 'stopnja_ddv': '.22', 'aktivna': True}
 
