@@ -41,3 +41,11 @@ def test_company_routes_require_master_and_no_legacy_rules_endpoints():
     for path, deps in scoped:
         assert any(getattr(c, 'company_role', None) == 'mojster' for c in deps), path
     assert not any('/pravila' in path or '/potrditev' in path for path, _ in ROUTES)
+
+
+def test_prosnje_mojstra_poti_obstajajo_in_so_zascitene():
+    found = {(m, r.path.replace('{prosnja_id}', '{id}')) for r in app.routes if isinstance(r, APIRoute) for m in r.methods}
+    wanted = {('POST', '/api/prosnje'), ('GET', '/api/prosnje'), ('GET', '/api/admin/prosnje'), ('POST', '/api/admin/prosnje/{id}/odlocitev')}
+    assert wanted <= found, wanted - found
+    for path, deps in ROUTES:
+        if path.startswith('/api/prosnje') or path.startswith('/api/admin/prosnje'): assert current_user in deps and session_database in deps and (administrator in deps) == path.startswith('/api/admin/'), path

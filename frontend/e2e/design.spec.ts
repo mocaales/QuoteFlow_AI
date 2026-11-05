@@ -3,8 +3,8 @@ import { mockApi, signIn } from './fixtures';
 
 // The visual system as measurable rules (docs/razvoj/frontend-arhitektura.md, "Vizualni sistem").
 // Every screen is checked at desktop and phone width and saved for review in test-results/screens/.
-type Screen = 'pregled' | 'cenik' | 'zaloge' | 'materiali' | 'admin';
-const nav: Record<Exclude<Screen, 'pregled'>, string> = { cenik: 'Cenik', zaloge: 'Zaloge', materiali: 'Materiali', admin: 'Podjetja in pravice' };
+type Screen = 'pregled' | 'cenik' | 'zaloge' | 'materiali' | 'admin' | 'prosnja';
+const nav: Record<Exclude<Screen, 'pregled'>, string> = { cenik: 'Cenik', zaloge: 'Zaloge', materiali: 'Materiali', admin: 'Podjetja in pravice', prosnja: 'Prošnja za mojstra' };
 const phone = (page: Page) => page.viewportSize()!.width < 800;
 
 async function open(page: Page, screen: Screen) {
@@ -90,12 +90,31 @@ async function check(page: Page, screen: string, project: string) {
 
 test.describe('Prijavljen mojster in admin', () => {
  test.beforeEach(async ({ page }) => { await mockApi(page); await signIn(page); });
- for (const screen of ['pregled', 'cenik', 'zaloge', 'materiali', 'admin'] as const) {
+ for (const screen of ['pregled', 'cenik', 'zaloge', 'materiali', 'admin', 'prosnja'] as const) {
   test(`zaslon ${screen} ustreza vizualnemu sistemu`, async ({ page }, info) => {
    await open(page, screen);
    await check(page, screen, info.project.name);
   });
  }
+
+ test('prošnja za mojstra pokaže zgodovino in obrazec', async ({ page }, info) => {
+  await open(page, 'prosnja');
+  await expect(page.getByText('Parketarstvo Ana s.p.')).toBeVisible();
+  await expect(page.getByText('Zavrnjena')).toBeVisible();
+  for (const label of ['Naziv podjetja', 'Matična številka', 'Naslov podjetja', 'Davčna številka (neobvezno)']) await expect(page.getByLabel(label)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Oddaj prošnjo' })).toBeVisible();
+  await check(page, 'prosnja-obrazec', info.project.name);
+ });
+
+ test('admin vidi prošnje mojstrov z gumbi Odobri in Zavrni samo pri oddani', async ({ page }, info) => {
+  await open(page, 'admin');
+  await expect(page.getByRole('heading', { name: 'Prošnje mojstrov' })).toBeVisible();
+  await expect(page.getByText('marko@example.test').first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Odobri Elektro Kos d.o.o.' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Zavrni Elektro Kos d.o.o.' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Odobri Zidarstvo/ })).toHaveCount(0);
+  await check(page, 'admin-prosnje', info.project.name);
+ });
 
  test('ikona za urejanje ob prehodu pokaže namig', async ({ page }) => {
   test.skip(phone(page), 'Telefon nima prehoda z miško; ime gumba ostane dostopno.');

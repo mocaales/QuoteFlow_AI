@@ -27,9 +27,19 @@ def demo_calculate(data: CalculationInput):
 app.include_router(identity_router, prefix='/api')
 app.include_router(supplier_router, prefix='/api')
 
+# Business conflicts raised by quoteflow_private functions with explicit SQLSTATEs.
+CONFLICTS = {
+    'QFP01': 'Prošnja je že obravnavana.',
+    'QFP02': 'Že imate oddano prošnjo, ki čaka na odločitev.',
+    'QFP03': 'Vlagatelj ne izpolnjuje pogojev za vlogo mojstra (potrjena e-pošta in aktivna vloga stranke ali delavca).',
+    'QFP04': 'Podjetje ali oddana prošnja s to matično številko že obstaja.',
+}
+
 @app.exception_handler(psycopg.Error)
 async def database_error(request: Request, error: psycopg.Error):
-    if isinstance(error, psycopg.errors.InsufficientPrivilege):
+    if error.sqlstate in CONFLICTS:
+        code, message = 409, CONFLICTS[error.sqlstate]
+    elif isinstance(error, psycopg.errors.InsufficientPrivilege):
         code, message = 403, 'Za to dejanje nimate pravice.'
     elif isinstance(error, psycopg.errors.NoDataFound):
         code, message = 404, 'Zapis ni na voljo.'

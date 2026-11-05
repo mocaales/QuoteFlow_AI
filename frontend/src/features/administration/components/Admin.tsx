@@ -1,16 +1,18 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getCompanies } from '../../identity/api';
-import type { Podjetje, Uporabnik, Dodelitev } from '../../identity/types';
-import { getUsers, getRoles, saveCompany, assignRole, setRoleActive } from '../api';
+import type { Podjetje, Uporabnik, Dodelitev, ProsnjaAdmin } from '../../identity/types';
+import { getUsers, getRoles, getApplications, decideApplication, saveCompany, assignRole, setRoleActive } from '../api';
 import Icon from '../../../components/Icon';
 import IconButton from '../../../components/IconButton';
+import { dateTime } from '../../../utils/format';
 
 const roleNames: Record<Dodelitev['vloga'], string> = { admin: 'Admin', stranka: 'Stranka', mojster: 'Mojster', delavec: 'Delavec' };
 export default function Admin({ client }: { client: SupabaseClient }) {
  const [companies, setCompanies] = useState<Podjetje[]>([]);
  const [users, setUsers] = useState<Uporabnik[]>([]);
  const [roles, setRoles] = useState<Dodelitev[]>([]);
+ const [applications, setApplications] = useState<ProsnjaAdmin[]>([]);
  const [edit, setEdit] = useState<Podjetje | null>(null);
  const [name, setName] = useState('');
  const [status, setStatus] = useState(true);
@@ -20,8 +22,8 @@ export default function Admin({ client }: { client: SupabaseClient }) {
  const [notice, setNotice] = useState('');
  const [loading, setLoading] = useState(true);
  async function load() {
-  const [c, u, r] = await Promise.all([getCompanies(client), getUsers(client), getRoles(client)]);
-  setCompanies(c); setUsers(u); setRoles(r);
+  const [c, u, r, a] = await Promise.all([getCompanies(client), getUsers(client), getRoles(client), getApplications(client)]);
+  setCompanies(c); setUsers(u); setRoles(r); setApplications(Array.isArray(a) ? a : []);
  }
  useEffect(() => { let active = true; load().catch(e => { if (active) setError(e.message); }).finally(() => { if (active) setLoading(false); }); return () => { active = false; }; }, [client]);
  async function mutate(action: () => Promise<unknown>, message: string) {
@@ -45,6 +47,12 @@ export default function Admin({ client }: { client: SupabaseClient }) {
   <div className="page-title"><div><h1>Podjetja in pravice</h1><p>{loading ? 'Upravljajte podjetja in dostop registriranih uporabnikov.' : `${companies.filter(c => c.aktivno).length} aktivnih podjetij in ${roles.filter(r => r.aktivna).length} aktivnih dodelitev vlog.`}</p></div></div>
   {error && <p role="alert" className="alert">{error}</p>}{notice && <p role="status" className="notice">{notice}</p>}
   {loading ? <p role="status" className="loading-state">Nalagam podatke …</p> : <>
+  <section className="admin-section"><h2>Prošnje mojstrov</h2>
+   <div className="table-wrap"><table className="data-table list-table"><caption className="sr-only">Prošnje za mojstra</caption><thead><tr><th>Podjetje</th><th>Vlagatelj</th><th className="num">Oddano</th><th>Stanje</th><th><span className="sr-only">Dejanja</span></th></tr></thead><tbody>
+    {applications.map(a => <tr key={a.id}><td><strong>{a.naziv_podjetja}</strong><span className="muted"> · {a.maticna_stevilka}</span></td><td data-label="Vlagatelj:">{a.e_posta}</td><td className="num" data-label="Oddano:">{dateTime(a.oddano_ob)}</td><td><span className={`status-badge ${a.stanje === 'oddana' ? 'pending' : a.stanje === 'odobrena' ? 'confirmed' : 'inactive'}`}>{a.stanje === 'oddana' ? 'Oddana' : a.stanje === 'odobrena' ? 'Odobrena' : 'Zavrnjena'}</span></td><td className="num">{a.stanje === 'oddana' && <><IconButton icon="check" label={`Odobri ${a.naziv_podjetja}`} tip="Odobri" disabled={busy} onClick={() => void mutate(() => decideApplication(client, a.id, true), 'Prošnja je odobrena.')}/><IconButton icon="close" label={`Zavrni ${a.naziv_podjetja}`} tip="Zavrni" disabled={busy} onClick={() => void mutate(() => decideApplication(client, a.id, false), 'Prošnja je zavrnjena.')}/></>}</td></tr>)}
+    {!applications.length && <tr><td colSpan={5} className="muted">Prošenj še ni.</td></tr>}
+   </tbody></table></div>
+  </section>
   <section className="admin-section narrow"><h2>Podjetja</h2>
    <form className="inline-form" onSubmit={submitCompany}>
     <label>Naziv podjetja<input value={name} onChange={e => setName(e.target.value)} required maxLength={200}/></label>
