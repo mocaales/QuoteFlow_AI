@@ -87,10 +87,11 @@ def test_ze_oddana_prosnja_je_409_s_slovenskim_sporocilom(api):
     assert r.status_code == 409 and r.json()['detail'] == M_ODDANA
 
 
-@pytest.mark.parametrize('error', [psycopg.errors.UniqueViolation, psycopg.errors.ObjectNotInPrerequisiteState])
-def test_splosne_napake_oddaje_niso_vec_409_iz_poti(api, error):
-    r = api(Fake(error=error())).post('/api/prosnje', json=FORM)
+def test_splosne_napake_oddaje_ne_pokazejo_sporocil_prosnje(api):
+    r = api(Fake(error=psycopg.errors.UniqueViolation())).post('/api/prosnje', json=FORM)
     assert r.status_code != 409 and 'matično' not in r.json()['detail'] and 'oddano prošnjo' not in r.json()['detail']
+    r = api(Fake(error=psycopg.errors.ObjectNotInPrerequisiteState())).post('/api/prosnje', json=FORM)
+    assert r.status_code == 409 and r.json()['detail'] == 'Dokument je zaklenjen in ga ni mogoče spremeniti.' and 'matično' not in r.json()['detail'] and 'oddano prošnjo' not in r.json()['detail']
 
 
 def test_brez_pravice_za_oddajo_je_403(api):

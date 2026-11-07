@@ -45,11 +45,40 @@ def test_demo_izracun_nenavaden_json_je_422_brez_inputa(client, body):
     check(client.post('/api/demo/calculate', content=body, headers=HEAD))
 
 
+# model v3: `/sestava` is gone; the same hostile JSON must be a short 422 on the new write routes
 @pytest.mark.parametrize('body', bodies('kolicina_na_enoto'))
-def test_sestava_nenavaden_json_je_422_brez_inputa(client, body):
-    check(client.put(f'/api/podjetja/{COMPANY}/cenik/{ITEM}/sestava/{MATERIAL}', content=body, headers=HEAD))
+def test_material_vrste_dela_nenavaden_json_je_422_brez_inputa(client, body):
+    check(client.put(f'/api/podjetja/{COMPANY}/vrste-dela/{ITEM}/materiali/{MATERIAL}', content=body, headers=HEAD))
+
+
+@pytest.mark.parametrize('body', bodies('naziv'))
+def test_vrsta_dela_in_postavka_nenavaden_json_je_422_brez_inputa(client, body):
+    check(client.post(f'/api/podjetja/{COMPANY}/vrste-dela', content=body, headers=HEAD))
+    check(client.post(f'/api/podjetja/{COMPANY}/projekti/{ITEM}/postavke', content=body, headers=HEAD))
+
+
+@pytest.mark.parametrize('body', bodies('dolzina'))
+def test_izmera_nenavaden_json_je_422_brez_inputa(client, body):
+    check(client.post(f'/api/podjetja/{COMPANY}/projekti/{ITEM}/postavke/{MATERIAL}/izmere', content=body, headers=HEAD))
+
+
+@pytest.mark.parametrize('body', bodies('e_posta'))
+def test_delavec_nenavaden_json_je_422_brez_inputa(client, body):
+    check(client.post(f'/api/podjetja/{COMPANY}/delavci/povabila', content=body, headers=HEAD))
 
 
 @pytest.mark.parametrize('body', bodies('naziv'))
 def test_projekt_nenavaden_json_je_422_brez_inputa(client, body):
     check(client.post(f'/api/podjetja/{COMPANY}/projekti', content=body, headers=HEAD))
+
+
+def test_prevelik_chunked_zahtevek_je_413_z_glavami(client):
+    r = client.post('/api/demo/calculate', content=(b'x' * 1000 for _ in range(300)), headers=HEAD)
+    assert r.status_code == 413 and r.json() == {'detail': 'Zahtevek je prevelik.'}
+    assert r.headers['x-content-type-options'] == 'nosniff' and r.headers['x-frame-options'] == 'DENY' and 'no-store' in r.headers['cache-control']
+
+
+@pytest.mark.parametrize('value', ['2026-12-01T00:00:00+14:00', 1893456000, '1893456000', '20261201', True, '2026-12-01 '])
+def test_datumi_ponudbe_in_racuna_so_strogi_iso(client, value):
+    check(client.post(f'/api/podjetja/{COMPANY}/projekti/{ITEM}/ponudbe', json={'velja_do': value}))
+    check(client.post(f'/api/podjetja/{COMPANY}/projekti/{ITEM}/racun/izdaj', json={'prejemnik_naziv': 'A', 'prejemnik_naslov': 'B', 'zapade_dne': value}))

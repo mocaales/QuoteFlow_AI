@@ -7,3 +7,5 @@ export const createProject = (client: SupabaseClient, company: string, data: Pro
 export const updateProject = (client: SupabaseClient, company: string, id: string, data: ProjectInput) => api<Project>(client, `${base(company)}/${id}`, 'PUT', data);
 export const requestSurvey = (client: SupabaseClient, company: string, id: string) => api(client, `${base(company)}/${id}/ogled`, 'POST');
 export const getOwnProjects = (client: SupabaseClient) => api<OwnProject[]>(client, '/projekti');
+export const setSchedule = (client: SupabaseClient, company: string, id: string, data: { termin_od: string; termin_do: string }) => api<Project>(client, `${base(company)}/${id}/termin`, 'PUT', data);
+export const finishWork = (client: SupabaseClient, company: string, id: string) => api<Project>(client, `${base(company)}/${id}/izvedba`, 'POST');

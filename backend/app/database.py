@@ -10,11 +10,12 @@ from psycopg.conninfo import conninfo_to_dict
 # Explicit environment values always win. No dependency on the working directory.
 load_dotenv(Path(__file__).resolve().parents[2] / '.env', override=False, interpolate=False)
 
+PRIVATE_TABLES = {'dogodek_vloge', 'poskus_delavca', 'dogodek_dokumenta'}
 EXPECTED_TABLES = {
     'uporabnik', 'podjetje', 'vloga_uporabnika', 'prosnja_mojstra', 'projekt',
     'ekipa', 'clan_ekipe', 'projekt_ekipa', 'postavka_cenika', 'vrsta_materiala',
-    'material', 'zaloga', 'sestava_cenika', 'ponudba', 'postavka_ponudbe',
-    'material_ponudbe', 'racun',
+    'material', 'zaloga', 'vrsta_dela', 'material_vrste_dela', 'postavka_projekta', 'izmera',
+    'ponudba', 'postavka_ponudbe', 'izmera_ponudbe', 'delo_ponudbe', 'material_ponudbe', 'racun',
 }
 
 class DatabaseConfigurationError(Exception):
@@ -56,10 +57,10 @@ def database_readiness():
             tables = connection.execute('''
                 select c.relname, c.relrowsecurity, c.relforcerowsecurity
                 from pg_class c join pg_namespace n on n.oid=c.relnamespace
-                where n.nspname='quoteflow' and c.relkind='r'
+                where c.relkind='r' and (n.nspname='quoteflow' or (n.nspname='quoteflow_private' and c.relname in ('dogodek_vloge','poskus_delavca','dogodek_dokumenta')))
             ''').fetchall()
             protected = {name for name, enabled, forced in tables if enabled and forced}
-            if not EXPECTED_TABLES <= protected:
+            if not (EXPECTED_TABLES | PRIVATE_TABLES) <= protected:
                 return 'database_schema_not_ready'
             # No end-user identity is fabricated by this public health check.
             connection.execute('set local role authenticated')

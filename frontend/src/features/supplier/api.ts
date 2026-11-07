@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { api } from '../../services/api';
-import type { CatalogInput, CompositionLine, CatalogItem, Material, MaterialInput, MaterialKind, Stock } from './types';
+import type { CatalogInput, CatalogItem, Material, MaterialInput, MaterialKind, Stock, WorkType, WorkTypeInput, WorkTypeMaterial, WorkTypeSaved } from './types';
 const base = (company: string) => `/podjetja/${company}`;
 export const getCatalog = (client: SupabaseClient, company: string) => api<CatalogItem[]>(client, base(company) + '/cenik');
 export const saveCatalogItem = (client: SupabaseClient, company: string, data: CatalogInput, id?: string) => api<CatalogItem>(client, base(company) + '/cenik' + (id ? `/${id}` : ''), id ? 'PUT' : 'POST', data);
@@ -13,6 +13,7 @@ export const getMaterials = async (client: SupabaseClient, company: string) => {
 export const saveMaterial = (client: SupabaseClient, company: string, data: MaterialInput, id?: string) => api(client, base(company) + '/materiali' + (id ? `/${id}` : ''), id ? 'PUT' : 'POST', data);
 export const saveStock = (client: SupabaseClient, company: string, id: string, lokacija: string, kolicina: string) => api(client, base(company) + `/materiali/${id}/zaloga`, 'PUT', { lokacija, kolicina });
 export const removeStock = (client: SupabaseClient, company: string, id: string, lokacija: string) => api(client, base(company) + `/materiali/${id}/zaloga?lokacija=${encodeURIComponent(lokacija)}`, 'DELETE');
-export const getComposition = (client: SupabaseClient, company: string, item: string) => api<CompositionLine[]>(client, base(company) + `/cenik/${item}/sestava`);
-export const saveCompositionLine = (client: SupabaseClient, company: string, item: string, material: string, kolicina_na_enoto: string) => api(client, base(company) + `/cenik/${item}/sestava/${material}`, 'PUT', { kolicina_na_enoto });
-export const removeCompositionLine = (client: SupabaseClient, company: string, item: string, material: string) => api(client, base(company) + `/cenik/${item}/sestava/${material}`, 'DELETE');
+export const getWorkTypes = (client: SupabaseClient, company: string) => api<WorkType[]>(client, base(company) + '/vrste-dela');
+export const saveWorkType = (client: SupabaseClient, company: string, data: WorkTypeInput, id?: string) => api<WorkTypeSaved>(client, base(company) + '/vrste-dela' + (id ? `/${id}` : ''), id ? 'PUT' : 'POST', data);
+export const saveWorkTypeMaterial = (client: SupabaseClient, company: string, work: string, material: string, kolicina_na_enoto: string) => api<WorkTypeMaterial>(client, base(company) + `/vrste-dela/${work}/materiali/${material}`, 'PUT', { kolicina_na_enoto });
+export const removeWorkTypeMaterial = (client: SupabaseClient, company: string, work: string, material: string) => api(client, base(company) + `/vrste-dela/${work}/materiali/${material}`, 'DELETE');

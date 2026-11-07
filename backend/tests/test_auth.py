@@ -33,7 +33,7 @@ def test_invalid_token_rejected_by_auth(monkeypatch):
 def test_unavailable_auth_does_not_expose_secrets(monkeypatch):
     def fail(*args,**kwargs):raise httpx.ConnectError('DO-NOT-LEAK')
     monkeypatch.setattr(auth.httpx,'get',fail)
-    r=client.get('/api/me',headers={'Authorization':'Bearer secret'})
+    r=client.get('/api/me',headers={'Authorization':'Bearer a.b.c'})
     assert r.status_code==503 and 'DO-NOT-LEAK' not in r.text
 
 

@@ -68,7 +68,8 @@ with psycopg.connect(LOCAL, autocommit=True) as control:
             ).fetchall() == [(admin_role, users[0], True)]
             assert db.execute("select count(*) from quoteflow_legacy_20261103.podjetje").fetchone()[0] == 2
             assert db.execute("select count(*) from quoteflow.podjetje").fetchone()[0] == 0
-            db.execute((ROOT / "supabase/tests/tenant_isolation.sql").read_text())
+            # Frozen 17-table smoke: tenant_isolation.sql asserts the current model, which these V2-only migrations do not create.
+            db.execute((ROOT / "supabase/tests/v2_upgrade_smoke.sql").read_text())
             print("PASS: populated V1 -> V2; 3 identities, 1 admin and 3 customers preserved; 2 V1 companies archived; 17-table RLS smoke green.")
     finally:
         control.execute(sql.SQL("drop database {} with (force)").format(sql.Identifier(name)))

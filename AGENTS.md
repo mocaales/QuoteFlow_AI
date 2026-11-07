@@ -12,7 +12,7 @@
 - Vse razvojno delo projekta opravljaj v tem repozitoriju.
 - RIRIS in uporabnikovi dogovori določajo zahteve aplikacije. OPP je ločena študija in ne omejuje razvoja.
 - Pred implementacijo preberi docs/01–04. README mora jasno ločevati izvedene in načrtovane funkcije.
-- Uporabljaj primarni projektni model iz docs/03: 17 tabel, podjetja, projekti, ekipe, cenik, materiali, ponudbe in računi. Starega RFQ-modela ne vračaj.
+- Uporabljaj primarni projektni model iz docs/03: 22 tabel, podjetja, projekti, ekipe, cenik, vrste dela, materiali, postavke projekta z izmerami, ponudbe in računi. Starega RFQ-modela ne vračaj.
 - Potrjeni obseg določa docs/02: F1–F7 MVP, F8–F22 pozneje in F23–F27 možne nadgradnje. AI pomoč pri projektih (F16–F20) je načrtovana po MVP. Nove zgodbe v docs/05 niso samodejna preslikava starih GitHub nalog.
 - Cene, količine, popuste, DDV, stanja projektov in izolacijo podjetij preverja programska logika ter omejitve baze. Poslane ponudbe in izdani računi so nespremenljivi.
 - Poslovni dostop preverjaj na backendu za vsako podjetje. Globalni vlogi sta admin in stranka; mojster in delavec veljata pri določenem podjetju. Stranka ne vidi osnutkov ali internih materialnih sestav.

@@ -80,4 +80,5 @@ def test_lastnikove_vloge_ni_mogoce_odvzeti_v_api(api_client, identities):
     client, _ = api_client; users, _, _, _ = identities
     master = next(v for v in client.get('/api/admin/vloge').json() if v['uporabnik_id'] == str(users['owner_a'][0]) and v['vloga'] == 'mojster')
     response = client.patch('/api/admin/vloge/' + master['id'], json={'aktivna': False})
-    assert response.status_code in (409, 422), response.text
+    assert response.status_code == 409 and response.json()['detail'] == 'Lastniku podjetja ni mogoče odvzeti vloge mojster.', response.text
+    assert next(v for v in client.get('/api/admin/vloge').json() if v['id'] == master['id'])['aktivna'] is True

@@ -85,7 +85,9 @@ describe('Admin: prošnje mojstrov', () => {
  it('admin vidi razdelek z e-pošto vlagatelja in gumbi samo pri oddanih prošnjah', async () => {
   pending = [entry(), entry({ id: 'p2', naziv_podjetja: 'Gradnje Kos d.o.o.', stanje: 'zavrnjena' })];
   render(<Admin client={client}/>);
-  expect(await screen.findByRole('heading', { name: 'Prošnje mojstrov' })).toBeTruthy();
+  // Prošnje so po preoblikovanju pod zavihkom, ne več naloženi razdelek.
+  await userEvent.click(await screen.findByRole('tab', { name: /^Prošnje mojstrov/ }));
+  expect(screen.getByRole('tabpanel')).toBeTruthy();
   expect((await screen.findAllByText('marko@example.test')).length).toBeGreaterThan(0);
   expect(screen.getByRole('button', { name: 'Odobri Mojster Novak d.o.o.' })).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Zavrni Mojster Novak d.o.o.' })).toBeTruthy();
@@ -94,6 +96,7 @@ describe('Admin: prošnje mojstrov', () => {
  it('odobritev pošlje odlocitev in osveži seznam', async () => {
   pending = [entry()];
   render(<Admin client={client}/>);
+  await userEvent.click(await screen.findByRole('tab', { name: /^Prošnje mojstrov/ }));
   await userEvent.click(await screen.findByRole('button', { name: 'Odobri Mojster Novak d.o.o.' }));
   await waitFor(() => expect(mockedApi).toHaveBeenCalledWith(client, '/admin/prosnje/p1/odlocitev', 'POST', { odobri: true }));
   await waitFor(() => expect(screen.queryByRole('button', { name: 'Odobri Mojster Novak d.o.o.' })).toBeNull());
@@ -102,6 +105,7 @@ describe('Admin: prošnje mojstrov', () => {
  it('zavrnitev pošlje odobri false', async () => {
   pending = [entry()];
   render(<Admin client={client}/>);
+  await userEvent.click(await screen.findByRole('tab', { name: /^Prošnje mojstrov/ }));
   await userEvent.click(await screen.findByRole('button', { name: 'Zavrni Mojster Novak d.o.o.' }));
   await waitFor(() => expect(mockedApi).toHaveBeenCalledWith(client, '/admin/prosnje/p1/odlocitev', 'POST', { odobri: false }));
  });

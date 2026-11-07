@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
 import SupplierWorkspace from '../features/supplier/components/SupplierWorkspace';
@@ -12,7 +12,7 @@ import type { CatalogItem } from '../features/supplier/types';
 vi.mock('../services/api', () => ({ api: vi.fn() }));
 const mockedApi = vi.mocked(api);
 const client = { auth: { signOut: vi.fn() } } as unknown as SupabaseClient;
-const item: CatalogItem = {id:'i',podjetje_id:'a',naziv:'Rušení estriha',opis:'Odstranitev',vrsta_dela:'Rušenje',enota:'m2',cena_na_enoto:'12.45',stopnja_ddv:'.22',aktivna:true};
+const item: CatalogItem = {id:'i',podjetje_id:'a',naziv:'Rušení estriha',opis:'Odstranitev',vrsta_dela_id:'v2',vrsta_dela:'Rušenje',enota:'m2',cena_na_enoto:'12.45',stopnja_ddv:'.22',aktivna:true};
 beforeEach(() => { vi.clearAllMocks(); });
 
 function iconOnly(button: HTMLElement, tip: string) {
@@ -42,13 +42,22 @@ describe('Dejanja z ikonami', () => {
    : path === '/admin/vloge' ? [{ id:'r', uporabnik_id:'u', e_posta:'u@example.test', podjetje_id:'a', naziv:'A', vloga:'mojster', aktivna:true },
      { id:'s', uporabnik_id:'u', e_posta:'u@example.test', podjetje_id:'a', naziv:'A', vloga:'delavec', aktivna:false }] : []);
   render(<Admin client={client}/>);
+  // Preoblikovano: urejanje podjetja ostane ikona, dejanja vlog so besedilni gumbi z ikono (ne samo ikona).
+  await userEvent.click(await screen.findByRole('tab', { name: 'Podjetja' }));
   const edit = await screen.findByRole('button', { name: 'Uredi A' });
   iconOnly(edit, 'Uredi');
-  iconOnly(screen.getByRole('button', { name: 'Odvzemi' }), 'Odvzemi vlogo');
-  iconOnly(screen.getByRole('button', { name: 'Aktiviraj' }), 'Ponovno aktiviraj');
   await userEvent.click(edit);
-  expect((screen.getByLabelText('Naziv podjetja') as HTMLInputElement).value).toBe('A');
-  for (const name of ['Shrani spremembe', 'Prekliči', 'Dodeli vlogo']) expect(screen.getByRole('button', { name }).querySelector('svg')).toBeTruthy();
+  const dialog = within(await screen.findByRole('dialog'));
+  expect((dialog.getByLabelText('Naziv podjetja') as HTMLInputElement).value).toBe('A');
+  expect(dialog.getByRole('button', { name: 'Shrani spremembe' }).querySelector('svg')).toBeTruthy();
+  await userEvent.click(dialog.getByRole('button', { name: 'Zapri' }));
+  await userEvent.click(screen.getByRole('tab', { name: 'Po podjetjih' }));
+  await userEvent.click(await screen.findByRole('button', { name: /^A/ }));
+  const revoke = await screen.findByRole('button', { name: /Odvzemi.*u@example\.test/ });
+  expect(revoke.textContent).toMatch(/Odvzemi/); expect(revoke.querySelector('svg')).toBeTruthy(); expect(revoke.getAttribute('data-tip')).toBeNull();
+  await userEvent.selectOptions(screen.getByLabelText('Stanje'), 'Odvzete');
+  const restore = await screen.findByRole('button', { name: /Ponovno aktiviraj/ });
+  expect(restore.textContent).toMatch(/Ponovno aktiviraj/); expect(restore.querySelector('svg')).toBeTruthy();
  });
 
  it('izbira podjetja na pregledu je ikona', async () => {

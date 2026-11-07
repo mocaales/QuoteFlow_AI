@@ -3,6 +3,7 @@ import base64
 from dataclasses import dataclass
 import json
 import os
+import re
 from uuid import UUID
 
 from fastapi import Depends, HTTPException
@@ -10,6 +11,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import httpx
 
 bearer = HTTPBearer(auto_error=False)
+TOKEN = re.compile(r'[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+')
 
 @dataclass(frozen=True)
 class Principal:
@@ -37,8 +39,11 @@ def auth_config() -> dict:
 def current_user(credentials: HTTPAuthorizationCredentials | None = Depends(bearer)) -> Principal:
     if credentials is None or credentials.scheme.lower() != 'bearer':
         raise HTTPException(401, 'Potrebna je prijava.', headers={'WWW-Authenticate': 'Bearer'})
-    config = auth_config()
     token = credentials.credentials
+    # Malformed or oversized tokens never reach Supabase Auth.
+    if len(token) > 4096 or not TOKEN.fullmatch(token):
+        raise HTTPException(401, 'Neveljavna prijavna seja.', headers={'WWW-Authenticate': 'Bearer'})
+    config = auth_config()
     try:
         response = httpx.get(
             os.getenv('SUPABASE_INTERNAL_URL', config['supabase_url']).rstrip('/') + '/auth/v1/user',

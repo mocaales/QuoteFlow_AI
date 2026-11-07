@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
 import Login from '../features/identity/components/Login';
@@ -56,9 +56,15 @@ describe('US-02 administracija', () => {
    return {};
   });
   render(<Admin client={client}/>);
-  await userEvent.click(await screen.findByRole('button', { name: 'Odvzemi' }));
-  expect(await screen.findByRole('button', { name: 'Aktiviraj' })).toBeTruthy();
-  expect(mockedApi).toHaveBeenCalledWith(client, '/admin/vloge/r', 'PATCH', { aktivna: false });
+  // Preoblikovana administracija (master-detail): izberi podjetje, odvzem zahteva potrditev, odvzeta vloga je privzeto skrita.
+  await userEvent.click(await screen.findByRole('button', { name: /^Podjetje A/ }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Odvzemi vlogo Delavec uporabniku user@example.test' }));
+  expect(mockedApi.mock.calls.some(c => c[2] === 'PATCH')).toBe(false);
+  await userEvent.click(screen.getByRole('button', { name: 'Odvzemi vlogo' }));
+  await waitFor(() => expect(mockedApi).toHaveBeenCalledWith(client, '/admin/vloge/r', 'PATCH', { aktivna: false }));
+  await waitFor(() => expect(screen.queryByText('user@example.test')).toBeNull());
+  await userEvent.selectOptions(screen.getByLabelText('Stanje'), 'Odvzete');
+  expect(await screen.findByRole('button', { name: /Ponovno aktiviraj.*user@example\.test/ })).toBeTruthy();
  });
  it('ne prikaže lažnega uspeha, če shranjevanje podjetja ni dovoljeno', async () => {
   mockedApi.mockImplementation(async (_client, path, method) => {
@@ -67,11 +73,14 @@ describe('US-02 administracija', () => {
   });
   render(<Admin client={client}/>);
   await waitFor(() => expect(screen.queryByText('Nalagam podatke …')).toBeNull());
-  await userEvent.type(screen.getByLabelText('Naziv podjetja'), 'Novo podjetje');
-  await userEvent.selectOptions(screen.getByLabelText('Lastnik podjetja'),'u');
-  await userEvent.type(screen.getByLabelText('Matična številka'),'1234567');
-  await userEvent.type(screen.getByLabelText('Naslov podjetja'),'Naslov 1');
+  await userEvent.click(screen.getByRole('tab', { name: 'Podjetja' }));
   await userEvent.click(screen.getByRole('button', { name: 'Dodaj podjetje' }));
+  const dialog = within(await screen.findByRole('dialog'));
+  await userEvent.type(dialog.getByLabelText('Naziv podjetja'), 'Novo podjetje');
+  await userEvent.selectOptions(dialog.getByLabelText('Lastnik podjetja'),'u');
+  await userEvent.type(dialog.getByLabelText('Matična številka'),'1234567');
+  await userEvent.type(dialog.getByLabelText('Naslov podjetja'),'Naslov 1');
+  await userEvent.click(dialog.getByRole('button', { name: 'Dodaj podjetje' }));
   expect((await screen.findByRole('alert')).textContent).toContain('nimate pravice');
   expect(screen.queryByText('Podjetje je shranjeno.')).toBeNull();
  });

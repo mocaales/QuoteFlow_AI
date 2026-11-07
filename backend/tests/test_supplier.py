@@ -6,7 +6,7 @@ from pydantic import ValidationError
 from app.routers.cenik import CatalogInput
 from app.routers.materiali import StockInput
 
-ITEM = {'naziv': 'Rušenje estriha', 'opis': 'Odstranitev in odvoz', 'vrsta_dela': 'Rušenje', 'enota': 'm2', 'cena_na_enoto': '12.4500', 'stopnja_ddv': '.22', 'aktivna': True}
+ITEM = {'naziv': 'Rušenje estriha', 'opis': 'Odstranitev in odvoz', 'vrsta_dela_id': str(uuid4()), 'enota': 'm2', 'cena_na_enoto': '12.4500', 'stopnja_ddv': '0.22', 'aktivna': True}
 
 
 def test_veljavna_postavka_cenika_novega_modela():
@@ -16,7 +16,7 @@ def test_veljavna_postavka_cenika_novega_modela():
 
 
 @pytest.mark.parametrize('change', [
-    {'naziv': ' '}, {'opis': ' '}, {'vrsta_dela': ' '}, {'enota': ' '},
+    {'naziv': ' '}, {'opis': ' '}, {'vrsta_dela_id': ' '}, {'vrsta_dela': 'Rušenje'}, {'enota': ' '}, {'enota': 'm²'}, {'enota': 'kg'},
     {'cena_na_enoto': '-1'}, {'cena_na_enoto': 'NaN'}, {'cena_na_enoto': 'Infinity'},
     {'cena_na_enoto': '1.00001'}, {'stopnja_ddv': '-.01'}, {'stopnja_ddv': '1.01'},
     {'podjetje_id': str(uuid4())}, {'strosek_na_enoto': '8'}, {'vrsta': 'blago'},
@@ -38,3 +38,8 @@ def test_zaloga_hrani_lokacijo_in_kolicino_materiala():
 def test_neveljavna_zaloga(change):
     with pytest.raises(ValidationError):
         StockInput(**({'lokacija': 'Skladisce', 'kolicina': '2.5'} | change))
+
+
+@pytest.mark.parametrize('value', ['yes', 1, 0, 'true', 'false', None])
+def test_aktivna_mora_biti_strogi_bool(value):
+    with pytest.raises(ValidationError): CatalogInput(**(ITEM | {'aktivna': value}))

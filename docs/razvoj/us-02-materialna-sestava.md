@@ -1,5 +1,7 @@
 # US-02: materialna sestava postavke cenika (#35 baza, #36 API, #37 vmesnik)
 
+> **Zgodovinsko (2026-11-07):** model v3 je odstranil `sestava_cenika` in poti `/sestava`; materiali so zdaj na vrsti dela. Glej [model-v3-postavke-izmere.md](model-v3-postavke-izmere.md). Spodnji zapis opisuje uvedeno (5. 11. 2026) stanje.
+
 Veljavna zgodba je US-02 v [uporabniških zgodbah](../05-uporabniske-zgodbe.md). Mojster določi, koliko katerega materiala porabi ena enota postavke cenika.
 
 ## Obseg

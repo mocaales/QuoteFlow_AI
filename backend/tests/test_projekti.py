@@ -60,7 +60,7 @@ def api():
 def test_mojster_seznam_projektov_ima_ploska_polja_stranke(api):
     r = api(Fake([row(), row(id=uuid4(), faza='ogled')])).get(BASE)
     assert r.status_code == 200 and len(r.json()) == 2
-    assert set(r.json()[0]) == {'id', 'naziv', 'opis', 'lokacija_izvedbe', 'faza', 'stranka_ime', 'stranka_priimek', 'stranka_e_posta', 'termin_od', 'termin_do'}
+    assert set(r.json()[0]) == {'id', 'naziv', 'opis', 'lokacija_izvedbe', 'faza', 'stranka_ime', 'stranka_priimek', 'stranka_e_posta', 'termin_od', 'termin_do', 'izvedba_koncana_ob', 'zakljuceno_ob'}
 
 
 def test_ustvari_projekt_vrne_201_in_prireze_vnos(api):
@@ -149,7 +149,7 @@ def test_nemojster_dobi_403_na_mojstrovih_poteh_projektov():
 def test_stranka_vidi_samo_lastne_projekte_in_polja_brez_stranke(api):
     fake = Fake([own()])
     r = api(fake).get('/api/projekti')
-    assert r.status_code == 200 and set(r.json()[0]) == {'id', 'naziv', 'opis', 'lokacija_izvedbe', 'faza', 'podjetje_naziv', 'termin_od', 'termin_do'}
+    assert r.status_code == 200 and set(r.json()[0]) == {'id', 'naziv', 'opis', 'lokacija_izvedbe', 'faza', 'podjetje_naziv', 'termin_od', 'termin_do', 'izvedba_koncana_ob', 'zakljuceno_ob'}
     sql, params = fake.calls[-1]
     assert 'stranka_id' in sql and (ME.id in params or str(ME.id) in map(str, params))
 
@@ -204,7 +204,7 @@ def test_nul_znak_pri_urejanju_projekta_je_422(api, field):
 
 
 BAD = ['\x07', '\x1b', '\x85', '\x00', '‮', '​', '⁦']
-ITEM = {'naziv': 'Rušenje estriha', 'opis': 'Odstranitev in odvoz', 'vrsta_dela': 'Rušenje', 'enota': 'm2', 'cena_na_enoto': '12.4500', 'stopnja_ddv': '.22', 'aktivna': True}
+ITEM = {'naziv': 'Rušenje estriha', 'opis': 'Odstranitev in odvoz', 'vrsta_dela_id': str(uuid4()), 'enota': 'm2', 'cena_na_enoto': '12.4500', 'stopnja_ddv': '0.22', 'aktivna': True}
 
 
 @pytest.mark.parametrize('field', ['naziv', 'opis', 'lokacija_izvedbe'])
@@ -217,6 +217,8 @@ def test_projekt_krmilni_in_format_znaki_so_422(api, field, bad):
 
 @pytest.mark.parametrize('bad', BAD)
 def test_cenik_naziv_krmilni_in_format_znaki_so_422(api, bad):
+    fake = Fake([ITEM | {'id': uuid4(), 'podjetje_id': COMPANY}])
+    assert api(fake).post(f'/api/podjetja/{COMPANY}/cenik', json=ITEM).status_code == 201  # the unchanged v3 form is valid
     fake = Fake([ITEM | {'id': uuid4(), 'podjetje_id': COMPANY}])
     assert api(fake).post(f'/api/podjetja/{COMPANY}/cenik', json=ITEM | {'naziv': f'Ru{bad}šenje'}).status_code == 422 and fake.calls == []
 
@@ -231,3 +233,11 @@ def test_projekt_opis_s_crlf_je_sprejet_pri_ustvarjanju_in_urejanju(api):
     assert api(Fake([row()])).post(BASE, json=FORM | {'opis': opis}).status_code == 201
     r = api(Fake([row()])).put(f'{BASE}/{PROJECT}', json={'naziv': 'Novo', 'opis': opis, 'lokacija_izvedbe': 'Celje'})
     assert r.status_code == 200, r.text
+
+
+def test_stranka_ne_vidi_e_poste_in_delavec_ne_doseze_mojstrovih_poti(api):
+    r = api(Fake([own()])).get(f'/api/projekti/{PROJECT}')
+    assert r.status_code == 200 and set(r.json()) == {'id', 'naziv', 'opis', 'lokacija_izvedbe', 'faza', 'podjetje_naziv', 'termin_od', 'termin_do', 'izvedba_koncana_ob', 'zakljuceno_ob'}
+    assert not any('e_posta' in k or 'stranka' in k for k in r.json())
+    from app.routers import projekti
+    assert getattr(projekti.master, 'company_role') == 'mojster'  # e-mail only behind the mojster guard; delavec gets 403

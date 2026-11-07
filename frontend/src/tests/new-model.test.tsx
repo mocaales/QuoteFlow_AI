@@ -35,12 +35,20 @@ describe('Novi relacijski model', () => {
  });
  it('obrazec podjetja zahteva lastnika, matično številko in naslov', async () => {
   render(<Admin client={client}/>);
-  expect(await screen.findByLabelText('Lastnik podjetja')).toBeTruthy();
-  expect(screen.getByLabelText('Matična številka')).toBeTruthy();
-  expect(screen.getByLabelText('Naslov podjetja')).toBeTruthy();
-  const options=within(screen.getByLabelText('Vloga')).getAllByRole('option').map(el=>el.textContent);
-  expect(options).toEqual(expect.arrayContaining(['Stranka','Mojster','Delavec']));
-  expect(options).not.toContain('Nabavnik');
+  // Preoblikovano: obrazec podjetja je v predalu zavihka Podjetja; vloga se dodeljuje v podjetju (Mojster ali Delavec, Stranka je globalna).
+  await userEvent.click(await screen.findByRole('tab',{name:'Podjetja'}));
+  await userEvent.click(screen.getByRole('button',{name:'Dodaj podjetje'}));
+  const dialog=within(await screen.findByRole('dialog'));
+  expect(dialog.getByLabelText('Lastnik podjetja')).toBeTruthy();
+  expect(dialog.getByLabelText('Matična številka')).toBeTruthy();
+  expect(dialog.getByLabelText('Naslov podjetja')).toBeTruthy();
+  await userEvent.click(dialog.getByRole('button',{name:'Zapri'}));
+  await userEvent.click(screen.getByRole('tab',{name:'Po podjetjih'}));
+  await userEvent.click(await screen.findByRole('button',{name:/^Mojster A/}));
+  await userEvent.click(await screen.findByRole('button',{name:'Dodaj člana'}));
+  const roles=within(await screen.findByRole('dialog')).getAllByRole('radio').map(el=>el.closest('label')?.textContent?.trim().split(/\s/)[0]);
+  expect(roles).toEqual(expect.arrayContaining(['Mojster','Delavec']));
+  expect(roles).not.toContain('Stranka');expect(roles).not.toContain('Nabavnik');
  });
  it('cenik ponuja vsebino dela in DDV, ne internih stroškov in potrditve', async () => {
   render(<SupplierWorkspace client={client} companyId="a" tab="cenik"/>);

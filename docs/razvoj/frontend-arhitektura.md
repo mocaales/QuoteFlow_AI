@@ -7,17 +7,21 @@ Koda v `frontend/src/` je razdeljena po odgovornostih:
 | `app/` | Sestava aplikacije, izbira poti in globalni slogi. |
 | `pages/` | Pogleda delovnega prostora in demonstracije; povezujeta funkcionalnosti v stran. |
 | `features/identity/` | Prijava, registracija, stanje seje, profil in tipi identitete, podjetij ter dodelitev pravic. |
-| `features/administration/` | Administratorski obrazci ter API-klici za podjetja in poslovne vloge. |
+| `features/administration/` | »Podjetja in pravice«: zavihki Po podjetjih, Po uporabnikih, Prošnje mojstrov in Podjetja; iskanje, filtri vloge in stanja, označeni gumbi Odvzemi/Ponovno aktiviraj s potrditvijo, stranski panel za dodelitev. |
 | `features/calculator/` | API-klici in tipi demonstracijskega kalkulatorja. Izračun izvaja backend. |
-| `features/supplier/` | Cenik, zaloge in prodajna pravila: obrazci, pogledi, tipi in API-klici. |
-| `features/projects/` | Projekti: pogled mojstra po fazah, obrazec in pogled stranke (samo branje). |
-| `components/` | Skupni elementi `Brand`, `Icon` in modalni stranski panel `Drawer`. |
-| `utils/` | Oblikovanje denarja, količin, odstotkov in časa. |
+| `features/supplier/` | Cenik, vrste dela (z materiali), materiali in zaloge: obrazci, pogledi, tipi in API-klici. |
+| `features/items/` | Postavke projekta: tabela z vsotami, obrazec postavke (`ItemForm`), izbira iz cenika (`CatalogPick`), izmere glede na enoto (`MeasuresPanel`); zneske izračuna baza. |
+| `features/workers/` | US-08: delavci podjetja za mojstra (dodaj po e-pošti, odvzemi, ponovno aktiviraj). |
+| `features/projects/` | Projekti: pogled mojstra po fazah, obrazec, termin in izvedba (`ProjectProgress`), pogled stranke (samo branje). |
+| `features/quotes/` | Ponudbe: osnutek (glava in vsote postavk projekta), pošiljanje, pogled stranke z izmerami. Postavke se urejajo v `features/items/`. |
+| `features/invoices/` | Račun: osnutek, izdaja, plačilo, pogled stranke. |
+| `components/` | Skupni elementi `Brand`, `Icon`, modalni stranski panel `Drawer` in `ActionAlert` (sporočilo o napaki dejanja). |
+| `utils/` | Oblikovanje denarja, količin, odstotkov in časa; hooka `useDetailFocus` in `useTipEscape` za fokus in Esc v podrobnostih. |
 | `lib/` | Enkratna nastavitev odjemalca Supabase Auth. |
 | `services/` | Skupni HTTP-odjemalec za FastAPI: prenos žetona, JSON in obravnava napak. |
 | `tests/` | Nastavitev testnega okolja in testi uporabniških tokov. |
 
-`main.tsx` samo zažene React. `app/Router.tsx` ohranja trenutni poti `/` in `/demo`; prehodi med njima uporabljajo običajno nalaganje strani. Pogledi ponudnika in administracije se izbirajo znotraj delovnega prostora. Za trenutni obseg dodatna knjižnica za usmerjanje ni potrebna.
+`main.tsx` samo zažene React. `app/Router.tsx` ohranja trenutni poti `/` in `/demo`; prehodi med njima uporabljajo običajno nalaganje strani. Pogledi ponudnika (Cenik, Vrste dela, Zaloge, Materiali, Projekti, Delavci) in administracije se izbirajo znotraj delovnega prostora; postavke projekta so zavihek v pogledu projekta. Za trenutni obseg dodatna knjižnica za usmerjanje ni potrebna.
 
 ## Pravila odvisnosti
 
