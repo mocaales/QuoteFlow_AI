@@ -10,8 +10,8 @@ Ta obseg nadomešča prejšnji proces RFQ. Oznake F in US v tem dokumentu ter [u
 |---|---|
 | `admin` | Globalno upravlja uporabnike, vloge, podjetja in prošnje mojstrov. Administratorska vloga sama ne daje pravice nastopati kot mojster ali sprejemati ponudbe stranke. |
 | `stranka` | Globalna vloga po potrjeni registraciji. Vidi svoje projekte in poslane dokumente, sprejme ali zavrne svojo ponudbo. Ne vidi internih osnutkov, zaloge ali podatkov drugih strank. |
-| `mojster` | Velja pri konkretnem podjetju. Upravlja njegovo poslovanje, cenik, materiale, projekte, ponudbe in račune; pozneje tudi delavce in ekipe. Samo mojster tega podjetja je lahko njegov lastnik. |
-| `delavec` | Velja pri konkretnem podjetju. Pozneje vidi projekte in termine, ki so mu dodeljeni prek ekip. Ne upravlja cenika, ponudb, računov ali poslovnih pravic. |
+| `mojster` | Velja pri konkretnem podjetju. Upravlja njegovo poslovanje, cenik, vrste dela, materiale, projekte, ponudbe in račune ter delavce (F8); pozneje tudi ekipe. Samo mojster tega podjetja je lahko njegov lastnik. |
+| `delavec` | Velja pri konkretnem podjetju. Pozneje vidi projekte in termine, ki so mu dodeljeni prek ekip; dodelitev `delavec` mojster ureja že zdaj (F8). Ne upravlja cenika, ponudb, računov ali poslovnih pravic. |
 
 Uporabnik ima lahko več vlog hkrati, tudi `mojster` v enem in `delavec` v drugem podjetju. Vsako dejanje preveri konkretno podjetje in trenutno aktivno vlogo. Stranka ni vezana na podjetje. Mojster potrebuje ločeno dodelitev `delavec`, če želi nastopati tudi kot delavec.
 
@@ -22,13 +22,13 @@ AI-agent je **sistemski akter**, ne poslovna vloga. Njegove funkcionalnosti so n
 | ID | Funkcionalnost | Obseg |
 |---|---|---|
 | F1 | Registracija, prijava in odjava, samodejna vloga stranke po potrditvi e-pošte ter upravljanje pravic. Stranka ali delavec odda prošnjo s podatki podjetja; adminova odobritev skupaj ustvari podjetje, lastništvo in vlogo mojstra. | **MVP** |
-| F2 | Cenik del in storitev, vrste materialov, materiali in zaloga po lokacijah. Postavka cenika lahko vsebuje materialno sestavo na enoto dela. | **MVP** |
+| F2 | Cenik del in storitev, vrste materialov, materiali in zaloga po lokacijah. Razširitev (model v3): **vrste dela** s ceno dela (urna postavka × ure × delavci) in neobveznimi materiali na enoto dela; postavka cenika ima vrsto dela in mersko enoto (m, m², m³, kos). | **MVP** |
 | F3 | Mojster ustvari projekt za obstoječega uporabnika z vlogo stranke, opiše zahtevo in lokacijo ter vodi začetni pregled in neobvezni ogled. | **MVP** |
-| F4 | Priprava ponudbe iz cenika ali ročnih postavk s količino, enoto, ceno, popustom, DDV in determinističnim izračunom. Cene in materialna sestava se prenesejo kot posnetek. | **MVP** |
+| F4 | Priprava ponudbe iz postavk projekta (iz cenika ali novih) z izmerami (seštevanje in odštevanje), količino, ceno, popustom, DDV, ceno dela in determinističnim izračunom (formula A v [dokumentu 03](03-podatkovni-model.md)). Ob pošiljanju se postavke, izmere, material in delo prenesejo kot nespremenljiv posnetek. | **MVP** |
 | F5 | Mojster pošlje ponudbo stranki v aplikaciji; stranka jo sprejme ali zavrne. Poslana vsebina je zaklenjena, popravek ustvari novo različico. | **MVP** |
 | F6 | Po sprejemu ponudbe vnos termina in evidentiranje zaključene izvedbe. Sistem dovoljuje samo prehode faz, ki imajo izpolnjene poslovne pogoje. | **MVP** |
 | F7 | Ob sprejemu ponudbe nastane osnutek računa. Po končani izvedbi ga mojster izda in pošlje v aplikaciji; ročno evidentiranje celotnega plačila zaključi projekt. | **MVP** |
-| F8 | Mojster dodaja in odstranjuje dodelitve delavcev v svojem podjetju; kot delavca lahko doda tudi sebe. | Pozneje |
+| F8 | Mojster povabi delavce v svoje podjetje z e-poštnim naslovom; delavec povabilo sprejme ali zavrne v aplikaciji, mojster pa povabilo prekliče ter dodelitve odvzame in ponovno aktivira. Skrbnik v pogledu »Podjetja in pravice« išče po podjetjih in uporabnikih ter odvzame vloge. | **Vključeno v trenutni obseg (izvedeno 2026-11-07, lokalno)** |
 | F9 | Urejanje ekip in članstev; delavec je lahko v več ekipah istega podjetja. | Pozneje |
 | F10 | Dodelitev ekip projektu ter pregled dodeljenih projektov in terminov za njihove delavce. | Pozneje |
 | F11 | Izvoz poslane ponudbe in izdanega računa v PDF. | Pozneje |
@@ -44,7 +44,7 @@ AI-agent je **sistemski akter**, ne poslovna vloga. Njegove funkcionalnosti so n
 | F21 | Fotografije in dokumenti projekta, npr. stanje pred posegom, meritve in dokumentacija ogleda. | Pozneje |
 | F22 | Projektne opombe in pojasnila med mojstrom ter stranko z ločitvijo internih in stranki vidnih vsebin. | Pozneje |
 
-**MVP F1–F7 tvori tok od dostopa do plačanega projekta.** F4–F7 presegajo osnovni CRUD: vključujejo izračune, nespremenljivost dokumentov, odločitev stranke, pogojevane prehode in povezavo plačila z zaključkom projekta. Ekipe, PDF, e-pošta in AI niso pogoj za prvi MVP.
+**MVP F1–F7 tvori tok od dostopa do plačanega projekta.** F4–F7 presegajo osnovni CRUD: vključujejo izračune, nespremenljivost dokumentov, odločitev stranke, pogojevane prehode in povezavo plačila z zaključkom projekta. Ekipe (F9–F10), PDF, e-pošta in AI niso pogoj za prvi MVP.
 
 Življenjski cikel je `pregled → [ogled] → ponudba → termin → izvedba → obracun → zakljucen`. Prva poslana ponudba uvede fazo `ponudba`, sprejem fazo `termin`, vnos termina fazo `izvedba`, zaključena izvedba z izdanim računom fazo `obracun`, celotno plačilo pa zaključek. Zavrnitev dovoljuje pripravo nove različice ponudbe. Projekt ima največ eno sprejeto ponudbo in ta največ en račun; delna plačila in delni računi niso vključeni.
 
@@ -52,7 +52,7 @@ AI-agent je **sistemski akter**, ne poslovna vloga. Njegove funkcionalnosti so n
 
 AI uporablja samo podatke, do katerih ima izvajalec pravico pri konkretnem podjetju. Ne izmišlja si cen, zaloge ali manjkajočih količin; negotovosti označi za pregled. Izračune cen, popustov, DDV in potreb materiala izvaja deterministična koda. AI ne pošilja ali sprejema ponudb, ne izdaja računov in ne spreminja faz projekta. Mojster izrecno potrdi predlagano vsebino pred običajnim postopkom pošiljanja.
 
-[Model s 17 tabelami](03-podatkovni-model.md) je osnova projektnega procesa. Poznejša e-pošta, AI, priponke, opombe in nadgradnje lahko zahtevajo dodatne podatkovne strukture oziroma shrambo. Njihova vključitev v načrt ne pomeni, da so že uvedene v bazo ali aplikacijo.
+[Model z 22 tabelami](03-podatkovni-model.md) je osnova projektnega procesa. Poznejša e-pošta, AI, priponke, opombe in nadgradnje lahko zahtevajo dodatne podatkovne strukture oziroma shrambo. Njihova vključitev v načrt ne pomeni, da so že uvedene v bazo ali aplikacijo.
 
 ## Pet možnih nadgradenj
 

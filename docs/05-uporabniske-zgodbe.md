@@ -1,6 +1,6 @@
 # Uporabniške zgodbe
 
-Zgodbe sledijo [potrjenemu obsegu](02-funkcionalnosti-in-obseg.md): **US-01–US-22** pokrivajo 22 predvidenih funkcionalnosti, **US-23–US-27** pa pet možnih nadgradenj. **US-01–US-07 so MVP.** Oznaka US-xx se v tem dokumentu preslika v Fx; označuje načrtovano vedenje, ne potrjene izvedbe.
+Zgodbe sledijo [potrjenemu obsegu](02-funkcionalnosti-in-obseg.md): **US-01–US-22** pokrivajo 22 predvidenih funkcionalnosti, **US-23–US-27** pa pet možnih nadgradenj. **US-01–US-07 so MVP; US-08 je bila 2026-11-07 vključena v trenutni obseg.** Oznaka US-xx se v tem dokumentu preslika v Fx; označuje načrtovano vedenje, ne potrjene izvedbe.
 
 Novi pomen oznak nadomešča stari obseg RFQ. Zgodovinski razvojni zapisi in obstoječe GitHub naloge ohranijo prvotni pomen; brez izrecne uskladitve niso dokaz izvedbe spodnjih zgodb. Dostop in izračuni upoštevajo [podatkovni model](03-podatkovni-model.md). Poznejše funkcionalnosti lahko zahtevajo njegove razširitve.
 
@@ -20,18 +20,19 @@ Kot stranka ali delavec želim uporabljati svoj račun in zaprositi za status mo
 4. Admin lahko upravlja dodelitve pravic; odvzem velja pri naslednjem poslovnem zahtevku. Lastniku ni mogoče odvzeti edine veljavne dodelitve mojstra njegovega podjetja.
 5. Mojster podjetja A, ki je delavec podjetja B, ne more z mojstrskimi pravicami urejati B. Globalni admin brez poslovne dodelitve ne more poslati ponudbe ali odločiti namesto stranke.
 
-### US-02 — Cenik in materiali
+### US-02 — Cenik, vrste dela in materiali
 
 **Funkcionalnost:** F2 · **Vloga:** mojster.
 
-Kot mojster želim urejati cenik ter materiale in zalogo svojega podjetja, da lahko ponovno uporabim podatke pri pripravi ponudbe.
+Kot mojster želim urejati vrste dela, cenik ter materiale in zalogo svojega podjetja, da lahko ponovno uporabim podatke pri pripravi ponudbe.
 
 **Merila sprejema:**
 
-1. Postavka cenika shrani naziv, opis, vrsto dela, enoto, nenegativno ceno in stopnjo DDV; neveljavne vrednosti so zavrnjene.
-2. Material ima vrsto, šifro, naziv, enoto in ceno; isti material ima lahko ločeno nenegativno količino na več lokacijah.
-3. Postavka cenika je veljavna brez materialne sestave; če je sestava dodana, vsebuje samo materiale istega podjetja s pozitivno količino na enoto dela.
-4. Zahtevek z identifikatorjem cenika, materiala ali zaloge drugega podjetja ne omogoči branja ali spremembe tega zapisa.
+1. Vrsta dela shrani naziv, opis, urno postavko, število ur in število delavcev (1–1000); cena dela je izpeljana (`urna_postavka × stevilo_ur × stevilo_delavcev`, zaokroženo na 2 decimalki). Vrsta dela brez dela ima ceno 0 €.
+2. Vrsta dela ima nič, enega ali več materialov istega podjetja s pozitivno količino na enoto dela (največ 50); neaktivnega materiala ni mogoče dodati. Vrst dela je na podjetje največ 500.
+3. Postavka cenika shrani naziv, opis, obvezno vrsto dela, mersko enoto (`m`, `m2`, `m3`, `kos`), nenegativno ceno in stopnjo DDV; neveljavne vrednosti in neznana enota so zavrnjene.
+4. Material ima vrsto, šifro, naziv, enoto in ceno; isti material ima lahko ločeno nenegativno količino na več lokacijah. Zaloga ni vezana na vrsto dela ali postavko.
+5. Zahtevek z identifikatorjem vrste dela, cenika, materiala ali zaloge drugega podjetja ne omogoči branja ali spremembe tega zapisa.
 
 ### US-03 — Začetek projekta
 
@@ -49,65 +50,30 @@ Kot mojster želim ustvariti projekt za stranko in opisati predvideno delo, da l
 
 **Funkcionalnost:** F4 · **Vloga:** mojster.
 
-Kot mojster želim sestaviti ponudbo iz cenika ali ročnih postavk, da dobim preverljiv izračun pred pošiljanjem.
+Kot mojster želim v projekt dodati postavke z izmerami in iz njih pripraviti ponudbo, da dobim preverljiv izračun pred pošiljanjem.
 
 **Merila sprejema:**
 
-1. Osnutek vsebuje postavke z nazivom, opisom, vrsto dela, enoto, ceno, pozitivno količino, popustom in DDV; neveljavne vrednosti so zavrnjene.
-2. Za 2 enoti po 100 EUR, 10 % popusta in 22 % DDV sistem izračuna 180 EUR neto, 39,60 EUR DDV in 219,60 EUR končne cene po pravilih iz dokumenta 03.
-3. Prenos iz cenika kopira ceno in materialno sestavo; poznejša sprememba cenika ali materiala ne spremeni teh podatkov ponudbe.
-4. Materialna sestava se ne prišteje še enkrat k prodajni ceni dela; osnutek pred pošiljanjem ni viden stranki.
-
-### US-05 — Pošiljanje in odločitev o ponudbi
-
-**Funkcionalnost:** F5 · **Vloga:** stranka.
-
-Kot stranka želim prejeti ponudbo v aplikaciji in jo sprejeti ali zavrniti, da lahko odločim o predlaganem poslu.
-
-**Merila sprejema:**
-
-1. Mojster pošlje veljaven osnutek; stranka projekta nato vidi poslano različico s postavkami, zneski in možnostjo sprejema ali zavrnitve.
-2. Odloči lahko samo stranka tega projekta in samo o poslani ponudbi; največ ena različica v projektu je lahko sprejeta.
-3. Poslane vsebine ni mogoče spremeniti. Popravek ustvari novo različico; zavrnitev ohrani zavrnjeni dokument in omogoči pripravo novega.
-
-### US-06 — Termin in izvedba
-
-**Funkcionalnost:** F6 · **Vloga:** mojster.
-
-Kot mojster želim določiti termin sprejetega dela in evidentirati zaključek izvedbe, da projekt napreduje samo ob izpolnjenih pogojih.
-
-**Merila sprejema:**
-
-1. Sprejem ponudbe prestavi projekt v `termin`; terminov izvedbe ni mogoče potrditi za projekt brez sprejete ponudbe.
-2. Za veljaven termin velja `termin_do > termin_od`; njegov vnos prestavi projekt v `izvedba`, stranka pa vidi dogovorjeni termin.
-3. Vnos termina ne označi dela kot opravljenega. Mojster mora zaključek izvedbe evidentirati posebej, preskok neposredno v plačan oziroma zaključen projekt pa je zavrnjen.
-
-### US-07 — Račun in plačilo
-
-**Funkcionalnost:** F7 · **Vloga:** mojster.
-
-Kot mojster želim izdati račun za sprejeto ponudbo ter evidentirati celotno plačilo, da lahko zaključim izvedeni projekt.
-
-**Merila sprejema:**
-
-1. Sprejem ponudbe v isti transakciji ustvari osnutek računa; za isto sprejeto ponudbo ni mogoče ustvariti drugega računa.
-2. Pred evidentirano končano izvedbo računa ni mogoče izdati. Izdaja in pošiljanje v aplikaciji omogočita stranki pregled ter uvedeta fazo `obracun`.
-3. Zneski računa izhajajo iz sprejete nespremenljive ponudbe; izdani račun vsebuje številko, podatke izdajatelja in prejemnika ter datum izdaje.
-4. Mojster lahko pri izdanem računu evidentira samo celotno plačilo: zapiše se `placano_ob` in projekt se zaključi. Delnega plačila ali plačila osnutka sistem ne sprejme.
+1. Postavka projekta ima naziv, opis, obvezno vrsto dela, mersko enoto, ceno na enoto, pozitivno količino (privzeto 1), popust, DDV in delovne podatke (urna postavka, ure, delavci; privzeto iz vrste dela, urejeno po postavki). Mojster jo doda iz cenika ali ustvari novo in jo ureja, dokler ponudba ni poslana.
+2. Izmere določajo količino: `m` dolžina, `m2` dolžina in višina, `m3` dolžina, višina in širina, `kos` samo število kosov; `kosi` množi vsako enoto. Vsaka izmera se prišteje ali odšteje; vsota ne sme biti negativna, za pošiljanje mora biti pri vsaki postavki večja od nič.
+3. Izračun po formuli A: za 20 m² × 1 × 10 €, delo 25 € × 8 h × 2 delavca, popust 10 % in DDV 22 % sistem izračuna 540,00 € neto, 118,80 € DDV in 658,80 € končne cene. Material je vključen v ceno na enoto in se ne prišteje še enkrat; vsote dokumenta so vsote zaokroženih vrstic.
+4. Ob pošiljanju nastane nespremenljiv posnetek postavk, izmer, materialov in dela; poznejša sprememba projekta, cenika, vrste dela ali cene materiala ga ne spremeni.
+5. Osnutek ni viden stranki; stranka v poslani ponudbi ne vidi urne postavke, ur, števila delavcev ali materialov.
 
 ## Poznejši razvoj
 
 ### US-08 — Delavci podjetja
 
-**Funkcionalnost:** F8 · **Vloga:** mojster.
+**Funkcionalnost:** F8 · **Vloga:** mojster · **Stanje:** vključeno v trenutni obseg in izvedeno (uvedeno 2026-11-08; [razvojni zapis](razvoj/admin-in-delavci-us-08.md)).
 
 Kot mojster želim upravljati dodelitve delavcev svojega podjetja, da lahko določim sodelavce brez posega v njihove druge vloge.
 
 **Merila sprejema:**
 
-1. Dodelitev `delavec` je vezana na izbranega obstoječega uporabnika in lastno podjetje; mojster lahko izbere tudi sebe.
-2. Enaka aktivna dodelitev se ne podvoji; odvzem ukine dostop delavca pri naslednjem zahtevku, zgodovina članstev pa ostane ohranjena.
-3. Dodajanje ali odvzem delavca v podjetju A ne spremeni njegovih vlog pri B in mu ne dodeli vloge mojstra.
+1. Mojster delavca povabi z e-poštnim naslovom (povabilo poteče po 14 dneh); odgovor je enak za neznan, nepotrjen, administratorski, neustrezen in nov naslov, zato obstoja računa ni mogoče ugotoviti. Vloga `delavec` nastane šele, ko povabljeni s potrjeno e-pošto povabilo sprejme v svojem računu (ali ga zavrne); mojster lahko odprto povabilo prekliče. Sprejem znova preveri pogoje; ob neizpolnjenih je odgovor splošen.
+2. Enako odprto povabilo in enaka aktivna dodelitev se ne podvojita; odvzem ukine dostop delavca pri naslednjem zahtevku, ponovna dodelitev ponovno aktivira isto vrstico, zgodovina pa ostane ohranjena.
+3. Dodajanje ali odvzem delavca v podjetju A ne spremeni njegovih vlog pri B in mu ne dodeli vloge mojstra; mojster dodeljuje samo `delavec` (prek povabila); neposredna dodelitev vlog je samo za admina. Ime in e-pošto delavca vidi šele po sprejemu.
+4. Admin v pogledu »Podjetja in pravice« išče po podjetjih (vsi člani in vloge) in po uporabnikih (kje dela, katere vloge ima), filtrira po vlogi in stanju ter vloge odvzame ali ponovno aktivira; lastniku ni mogoče odvzeti vloge mojster.
 
 ### US-09 — Ekipe
 

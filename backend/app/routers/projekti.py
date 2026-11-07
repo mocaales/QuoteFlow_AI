@@ -1,10 +1,11 @@
 """Projects: masters start and edit them per company; customers read only their own."""
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import AwareDatetime, BaseModel, BeforeValidator, Field, model_validator
 
 from app.access import company_member, customer
 from app.auth import Principal, current_user
@@ -23,6 +24,24 @@ class EditInput(Input):
 class CreateInput(EditInput):
     e_posta_stranke: str = Field(min_length=1, max_length=320)
 
+def only_text(value):
+    # numbers and booleans would be read as epoch timestamps
+    if not isinstance(value, str): raise ValueError('Termin mora biti podan kot niz z datumom in časom.')
+    return value
+
+Term = Annotated[AwareDatetime, BeforeValidator(only_text)]
+
+class TermInput(Input):
+    termin_od: Term
+    termin_do: Term
+
+    @model_validator(mode='after')
+    def order(self):
+        if self.termin_do <= self.termin_od: raise ValueError('Konec termina mora biti po začetku.')
+        if self.termin_od > datetime.now(timezone.utc) + timedelta(days=366): raise ValueError('Termin se lahko začne največ 366 dni vnaprej.')
+        if self.termin_do - self.termin_od > timedelta(days=366): raise ValueError('Termin je lahko dolg največ 366 dni.')
+        return self
+
 class MasterProject(BaseModel):
     id: UUID
     naziv: str
@@ -34,6 +53,8 @@ class MasterProject(BaseModel):
     stranka_e_posta: str
     termin_od: datetime | None
     termin_do: datetime | None
+    izvedba_koncana_ob: datetime | None = None
+    zakljuceno_ob: datetime | None = None
 
 class OwnProject(BaseModel):
     id: UUID
@@ -44,11 +65,13 @@ class OwnProject(BaseModel):
     podjetje_naziv: str
     termin_od: datetime | None
     termin_do: datetime | None
+    izvedba_koncana_ob: datetime | None = None
+    zakljuceno_ob: datetime | None = None
 
 # separate statement after each write: RLS helpers see the statement-start snapshot, so the row written by the function is invisible inside it
 def read_back(db, company_id, project_id):
     return db.execute('''select p.id,p.naziv,p.opis,p.lokacija_izvedbe,p.faza,s.ime as stranka_ime,s.priimek as stranka_priimek,
-        s.e_posta as stranka_e_posta,p.termin_od,p.termin_do from quoteflow.projekt p
+        s.e_posta as stranka_e_posta,p.termin_od,p.termin_do,p.izvedba_koncana_ob,p.zakljuceno_ob from quoteflow.projekt p
         join quoteflow_private.stranke_projektov(%s) s on s.id=p.stranka_id where p.id=%s and p.podjetje_id=%s''',
         (company_id, project_id, company_id)).fetchone()
 
@@ -57,7 +80,7 @@ COMPANY = '/podjetja/{company_id}/projekti'
 @router.get(COMPANY, response_model=list[MasterProject])
 def company_projects(company_id: UUID, db=Depends(master)):
     return db.execute('''select p.id,p.naziv,p.opis,p.lokacija_izvedbe,p.faza,s.ime as stranka_ime,s.priimek as stranka_priimek,
-        s.e_posta as stranka_e_posta,p.termin_od,p.termin_do from quoteflow.projekt p
+        s.e_posta as stranka_e_posta,p.termin_od,p.termin_do,p.izvedba_koncana_ob,p.zakljuceno_ob from quoteflow.projekt p
         join quoteflow_private.stranke_projektov(%s) s on s.id=p.stranka_id
         where p.podjetje_id=%s order by p.id desc''', (company_id, company_id)).fetchall()
 
@@ -80,14 +103,24 @@ def request_inspection(company_id: UUID, projekt_id: UUID, db=Depends(master)):
     project_id = db.execute('select id from quoteflow_private.zahtevaj_ogled(%s,%s)', (company_id, projekt_id)).fetchone()['id']
     return read_back(db, company_id, project_id)
 
+@router.put(COMPANY + '/{projekt_id}/termin', response_model=MasterProject)
+def set_term(company_id: UUID, projekt_id: UUID, data: TermInput, db=Depends(master)):
+    db.execute('select * from quoteflow_private.doloci_termin(%s,%s,%s,%s)', (company_id, projekt_id, data.termin_od, data.termin_do)).fetchone()
+    return read_back(db, company_id, projekt_id)
+
+@router.post(COMPANY + '/{projekt_id}/izvedba', response_model=MasterProject)
+def finish_work(company_id: UUID, projekt_id: UUID, db=Depends(master)):
+    db.execute('select * from quoteflow_private.zakljuci_izvedbo(%s,%s)', (company_id, projekt_id)).fetchone()
+    return read_back(db, company_id, projekt_id)
+
 @router.get('/projekti', response_model=list[OwnProject])
 def own_projects(user: Principal = Depends(current_user), db=Depends(customer)):
     return db.execute('''select p.id,p.naziv,p.opis,p.lokacija_izvedbe,p.faza,quoteflow_private.naziv_podjetja(p.podjetje_id) as podjetje_naziv,
-        p.termin_od,p.termin_do from quoteflow.projekt p where p.stranka_id=%s order by p.id desc''', (user.id,)).fetchall()
+        p.termin_od,p.termin_do,p.izvedba_koncana_ob,p.zakljuceno_ob from quoteflow.projekt p where p.stranka_id=%s order by p.id desc''', (user.id,)).fetchall()
 
 @router.get('/projekti/{projekt_id}', response_model=OwnProject)
 def own_project(projekt_id: UUID, user: Principal = Depends(current_user), db=Depends(customer)):
     row = db.execute('''select p.id,p.naziv,p.opis,p.lokacija_izvedbe,p.faza,quoteflow_private.naziv_podjetja(p.podjetje_id) as podjetje_naziv,
-        p.termin_od,p.termin_do from quoteflow.projekt p where p.stranka_id=%s and p.id=%s''', (user.id, projekt_id)).fetchone()
+        p.termin_od,p.termin_do,p.izvedba_koncana_ob,p.zakljuceno_ob from quoteflow.projekt p where p.stranka_id=%s and p.id=%s''', (user.id, projekt_id)).fetchone()
     if not row: raise HTTPException(404, 'Zapis ni na voljo.')
     return row

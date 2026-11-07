@@ -1,0 +1,11 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { api } from '../../services/api';
+import type { Invitation, MyInvitation, Worker, WorkerInput } from './types';
+const base = (company: string) => `/podjetja/${company}/delavci`;
+export const getWorkers = (client: SupabaseClient, company: string) => api<Worker[]>(client, base(company));
+export const setWorkerActive = (client: SupabaseClient, company: string, roleId: string, active: boolean) => api<Worker>(client, `${base(company)}/${roleId}`, 'PATCH', { aktivna: active });
+export const inviteWorker = (client: SupabaseClient, company: string, data: WorkerInput) => api<Invitation>(client, `${base(company)}/povabila`, 'POST', data);
+export const getInvitations = (client: SupabaseClient, company: string) => api<Invitation[]>(client, `${base(company)}/povabila`);
+export const cancelInvitation = (client: SupabaseClient, company: string, id: string) => api<Invitation>(client, `${base(company)}/povabila/${id}/preklic`, 'POST');
+export const getMyInvitations = (client: SupabaseClient) => api<MyInvitation[]>(client, '/povabila');
+export const answerInvitation = (client: SupabaseClient, id: string, accept: boolean) => api<{ id: string; stanje: string }>(client, `/povabila/${id}/odlocitev`, 'POST', { sprejmi: accept });

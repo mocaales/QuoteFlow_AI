@@ -1,8 +1,12 @@
-export type CatalogInput = { naziv: string; opis: string; vrsta_dela: string; enota: string; cena_na_enoto: string; stopnja_ddv: string; aktivna: boolean };
-export type CatalogItem = CatalogInput & { id: string; podjetje_id: string };
+export type Unit = 'm' | 'm2' | 'm3' | 'kos';
+export type CatalogInput = { naziv: string; opis: string; vrsta_dela_id: string; enota: Unit; cena_na_enoto: string; stopnja_ddv: string; aktivna: boolean };
+export type CatalogItem = CatalogInput & { id: string; podjetje_id: string; vrsta_dela?: string };
 export type MaterialKind = { id: string; podjetje_id: string; naziv: string };
 export type Stock = { lokacija: string; kolicina: string };
 export type MaterialInput = { vrsta_materiala_id: string; sifra: string; naziv: string; enota: string; cena_na_enoto: string; aktiven: boolean };
 export type Material = MaterialInput & { id: string; zaloge: Stock[] };
-export type SupplierTab = 'cenik' | 'materiali' | 'zaloge';
-export type CompositionLine = { material_id: string; sifra: string; naziv: string; enota: string; aktiven: boolean; kolicina_na_enoto: string };
+export type SupplierTab = 'cenik' | 'vrste-dela' | 'materiali' | 'zaloge';
+export type WorkTypeInput = { naziv: string; opis: string; urna_postavka: string; stevilo_ur: string; stevilo_delavcev: number; aktivna: boolean };
+export type WorkTypeMaterial = { material_id: string; naziv: string; enota: string; kolicina_na_enoto: string; cena_na_enoto: string; aktiven: boolean };
+export type WorkTypeSaved = WorkTypeInput & { id: string; podjetje_id: string; cena_dela: string };
+export type WorkType = WorkTypeSaved & { materiali: WorkTypeMaterial[] };

@@ -8,21 +8,25 @@ import { api } from '../services/api';
 vi.mock('../services/api', () => ({ api: vi.fn() }));
 const mockedApi=vi.mocked(api);
 const client={} as SupabaseClient;
-const item={id:'i',podjetje_id:'a',naziv:'Rušenje estriha',opis:'Odstranitev',vrsta_dela:'Rušenje',enota:'m2',cena_na_enoto:'12.45',stopnja_ddv:'.22',aktivna:true};
-beforeEach(()=>{vi.clearAllMocks();mockedApi.mockImplementation(async (_c,path)=>path.endsWith('/cenik')?[item]:[]);});
+const item={id:'i',podjetje_id:'a',naziv:'Rušenje estriha',opis:'Odstranitev',vrsta_dela_id:'v2',vrsta_dela:'Rušenje',enota:'m2',cena_na_enoto:'12.45',stopnja_ddv:'.22',aktivna:true};
+const trades=[{id:'v1',naziv:'Keramika',opis:'',urna_postavka:'25.0000',stevilo_ur:'8.0000',stevilo_delavcev:2,aktivna:true,cena_dela:'400.00',materiali:[]},{id:'v2',naziv:'Rušenje',opis:'',urna_postavka:'0.0000',stevilo_ur:'0.0000',stevilo_delavcev:1,aktivna:true,cena_dela:'0.00',materiali:[]},{id:'v3',naziv:'Staro delo',opis:'',urna_postavka:'1.0000',stevilo_ur:'1.0000',stevilo_delavcev:1,aktivna:false,cena_dela:'1.00',materiali:[]}];
+beforeEach(()=>{vi.clearAllMocks();mockedApi.mockImplementation(async (_c,path)=>path.endsWith('/cenik')?[item]:path.endsWith('/vrste-dela')?trades:[]);});
 describe('Cenik in materiali',()=>{
  it('shrani delo z decimalno ceno in pretvorbo odstotka DDV',async()=>{
   render(<SupplierWorkspace client={client} companyId="a" tab="cenik"/>);
   const user=userEvent.setup();await user.click(await screen.findByRole('button',{name:'Nova postavka'}));
   const form=within(screen.getByRole('dialog'));
   await user.type(form.getByLabelText('Naziv'),'Polaganje');await user.type(form.getByLabelText('Opis'),'Polaganje ploščic');
-  await user.type(form.getByLabelText('Vrsta dela'),'Keramika');
-  await user.clear(form.getByLabelText('Enota'));await user.type(form.getByLabelText('Enota'),'m2');
+  const trade=form.getByLabelText('Vrsta dela') as HTMLSelectElement;expect(trade.required).toBe(true);
+  const names=within(trade).getAllByRole('option').map(o=>o.textContent);expect(names).toContain('Keramika');expect(names).not.toContain('Staro delo');
+  await user.selectOptions(trade,'v1');await user.selectOptions(form.getByLabelText('Enota'),'m²');
+  expect(within(form.getByLabelText('Enota')).getAllByRole('option').map(o=>o.textContent)).toEqual(expect.arrayContaining(['m','m²','m³','kos']));
   await user.type(form.getByLabelText('Cena na enoto (€)'),'45.125');
   await user.clear(form.getByLabelText('DDV (%)'));await user.type(form.getByLabelText('DDV (%)'),'22');
   await user.click(form.getByRole('button',{name:'Shrani postavko'}));
   await waitFor(()=>expect(screen.queryByRole('dialog')).toBeNull());
-  expect(mockedApi).toHaveBeenCalledWith(client,'/podjetja/a/cenik','POST',expect.objectContaining({naziv:'Polaganje',vrsta_dela:'Keramika',cena_na_enoto:'45.125',stopnja_ddv:'0.220000'}));
+  expect(mockedApi).toHaveBeenCalledWith(client,'/podjetja/a/cenik','POST',expect.objectContaining({naziv:'Polaganje',vrsta_dela_id:'v1',enota:'m2',cena_na_enoto:'45.125',stopnja_ddv:'0.220000'}));
+  expect(Object.keys(mockedApi.mock.calls.find(c=>c[2]==='POST')![3] as object)).not.toContain('vrsta_dela');
  });
  it('pri napaki ohrani obrazec in ne prikaže uspeha',async()=>{
   mockedApi.mockImplementation(async(_c,path,method)=>{if(method==='PUT')throw new Error('Pravica je odvzeta.');return path.endsWith('/cenik')?[item]:[];});

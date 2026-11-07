@@ -1,4 +1,5 @@
 """Global administration: users, roles, companies and master request decisions."""
+from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
@@ -39,13 +40,14 @@ class RoleInput(Input):
         return self
 
 class RoleUpdate(Input):
-    aktivna: bool
+    aktivna: StrictBool
 
 class UserRow(BaseModel):
     id: UUID
     e_posta: str
     ime: str
     priimek: str
+    potrjen: bool
 
 class RoleRow(BaseModel):
     id: UUID
@@ -56,7 +58,12 @@ class RoleRow(BaseModel):
 
 class AdminRoleRow(RoleRow):
     e_posta: str
+    ime: str
+    priimek: str
     naziv: str | None
+    podjetje_aktivno: bool | None
+    je_lastnik: bool
+    dodeljeno_ob: datetime
 
 class ProsnjaDecision(Input):
     odobri: StrictBool
@@ -68,11 +75,14 @@ class AdminProsnjaRow(ProsnjaRow):
 
 @router.get('/admin/uporabniki', response_model=list[UserRow])
 def users(db=Depends(administrator)):
-    return db.execute('select id,e_posta,ime,priimek from quoteflow.uporabnik order by e_posta,id').fetchall()
+    # confirmation state comes from an admin-only definer function, so it does not depend on role rows
+    return db.execute("""select u.id,u.e_posta,u.ime,u.priimek,coalesce(c.potrjen,false) as potrjen
+        from quoteflow.uporabnik u left join quoteflow_private.potrjeni_uporabniki() c on c.id=u.id order by u.e_posta,u.id""").fetchall()
 
 @router.get('/admin/vloge', response_model=list[AdminRoleRow])
 def roles(db=Depends(administrator)):
-    return db.execute('''select v.id,v.uporabnik_id,u.e_posta,v.podjetje_id,p.naziv,v.vloga,v.aktivna
+    return db.execute('''select v.id,v.uporabnik_id,u.e_posta,u.ime,u.priimek,v.podjetje_id,p.naziv,p.aktivno as podjetje_aktivno,v.vloga,v.aktivna,
+        (v.vloga='mojster' and p.lastnik_id=v.uporabnik_id) as je_lastnik,v.dodeljeno_ob
         from quoteflow.vloga_uporabnika v join quoteflow.uporabnik u on u.id=v.uporabnik_id
         left join quoteflow.podjetje p on p.id=v.podjetje_id order by u.e_posta,v.vloga,p.naziv''').fetchall()
 

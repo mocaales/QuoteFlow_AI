@@ -16,7 +16,7 @@ export async function api<T>(client: SupabaseClient, path: string, method = 'GET
  });
  if (!response.ok) {
   const error = await response.json().catch(() => ({}));
-  throw new ApiError(typeof error.detail === 'string' ? error.detail : 'Preverite vnesene podatke.', response.status);
+  throw new ApiError(typeof error.detail === 'string' ? error.detail : response.status >= 500 ? 'Strežnik trenutno ni dosegljiv. Poskusite znova.' : 'Preverite vnesene podatke.', response.status);
  }
  return response.json();
 }

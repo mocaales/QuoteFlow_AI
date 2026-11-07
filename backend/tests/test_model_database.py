@@ -11,20 +11,23 @@ from psycopg.rows import dict_row
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-TABLES = {
+V2_TABLES = {
     'uporabnik', 'vloga_uporabnika', 'podjetje', 'prosnja_mojstra',
     'projekt', 'ekipa', 'clan_ekipe', 'projekt_ekipa', 'postavka_cenika',
     'vrsta_materiala', 'material', 'zaloga', 'sestava_cenika', 'ponudba',
     'postavka_ponudbe', 'material_ponudbe', 'racun',
 }
+# Model v3 (G1 2026-11-07): sestava_cenika is replaced by vrsta_dela + material_vrste_dela; plus postavka_projekta, izmera, izmera_ponudbe, delo_ponudbe (mojster-only labour snapshot).
+TABLES = (V2_TABLES - {'sestava_cenika'}) | {'vrsta_dela', 'material_vrste_dela', 'postavka_projekta', 'izmera', 'izmera_ponudbe', 'delo_ponudbe'}
 LOCAL = pytest.mark.skipif(not os.getenv('TEST_DATABASE_URL'), reason='Requires disposable local Supabase')
+Q = 'quoteflow_private.'
 
 
 def test_migracija_obstaja_in_uvaja_novi_model():
     files = sorted((ROOT / 'supabase/migrations').glob('*v2*.sql'))
     assert files, 'Approved V2 requires a versioned SQL migration'
     sql = files[-1].read_text().lower()
-    for table in TABLES:
+    for table in V2_TABLES:
         assert f'quoteflow.{table}' in sql, table
     assert 'quoteflow_legacy_' in sql, 'Existing business data must be preserved in an inaccessible archive'
 
@@ -84,8 +87,13 @@ def reject(db, sql, args=()):
             db.execute('set constraints all immediate')
 
 
+def test_pogodba_pripravljenosti_pricakuje_22_tabel_modela_v3():
+    from app.database import EXPECTED_TABLES
+    assert len(TABLES) == 22 and EXPECTED_TABLES == TABLES
+
+
 @LOCAL
-def test_natancno_sedemnajst_tabel_in_zasciten_arhiv(db):
+def test_natancno_22_tabel_in_zasciten_arhiv(db):
     actual = {r['tablename'] for r in db.execute("select tablename from pg_tables where schemaname='quoteflow'")}
     assert actual == TABLES
     assert all(r['relrowsecurity'] and r['relforcerowsecurity'] for r in db.execute("select relrowsecurity,relforcerowsecurity from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='quoteflow' and c.relkind='r'"))
@@ -136,24 +144,29 @@ def test_ekipe_in_projekti_ne_mesajo_podjetij(db, identities):
 
 @pytest.fixture
 def catalog(db, identities):
+    """Per company (vrsta_materiala, material, postavka_cenika); the item points at a vrsta dela without labour that uses the material (2 kg per unit)."""
     users, a, b, _ = identities
     data = []
     for company in (a, b):
         kind = db.execute("insert into quoteflow.vrsta_materiala(podjetje_id,naziv) values(%s,'Lepilo') returning id", (company,)).fetchone()['id']
         material = db.execute("insert into quoteflow.material(vrsta_materiala_id,sifra,naziv,enota,cena_na_enoto) values(%s,'M1','Lepilo','kg',2) returning id", (kind,)).fetchone()['id']
-        item = db.execute("insert into quoteflow.postavka_cenika(podjetje_id,naziv,opis,vrsta_dela,enota,cena_na_enoto,stopnja_ddv) values(%s,'Polaganje','Opis','Gradnja','m2',25,.22) returning id", (company,)).fetchone()['id']
+        vrsta = db.execute("insert into quoteflow.vrsta_dela(podjetje_id,naziv,opis,urna_postavka,stevilo_ur,stevilo_delavcev) values(%s,'Gradnja','Splošna gradnja',0,0,1) returning id", (company,)).fetchone()['id']
+        db.execute('insert into quoteflow.material_vrste_dela(vrsta_dela_id,material_id,kolicina_na_enoto) values(%s,%s,2)', (vrsta, material))
+        item = db.execute("insert into quoteflow.postavka_cenika(podjetje_id,naziv,opis,vrsta_dela_id,enota,cena_na_enoto,stopnja_ddv) values(%s,'Polaganje','Opis',%s,'m2',25,.22) returning id", (company, vrsta)).fetchone()['id']
         data.append((kind, material, item))
     return data
 
 
+def vrsta_of(db, item): return db.execute('select vrsta_dela_id as v from quoteflow.postavka_cenika where id=%s', (item,)).fetchone()['v']
+
+
 @LOCAL
-def test_materiali_sestava_zaloga_in_zasebnost(db, identities, catalog):
+def test_materiali_vrsta_dela_zaloga_in_zasebnost(db, identities, catalog):
     users, a, b, _ = identities
     ka, ma, ca = catalog[0]
     _, mb, cb = catalog[1]
     db.execute("insert into quoteflow.zaloga values(%s,'Skladisce',10)", (ma,))
-    db.execute('insert into quoteflow.sestava_cenika values(%s,%s,2)', (ca, ma))
-    reject(db, 'insert into quoteflow.sestava_cenika values(%s,%s,2)', (ca, mb))
+    reject(db, 'insert into quoteflow.material_vrste_dela(vrsta_dela_id,material_id,kolicina_na_enoto) values(%s,%s,2)', (vrsta_of(db, ca), mb))
     reject(db, "insert into quoteflow.zaloga values(%s,'Drugje',-1)", (ma,))
     reject(db, "insert into quoteflow.material(vrsta_materiala_id,sifra,naziv,enota,cena_na_enoto) values(%s,'M1','Duplikat','kg',2)", (ka,))
     reject(db, "update quoteflow.material set enota='m' where id=%s", (ma,))
@@ -179,83 +192,96 @@ def test_brez_seje_ni_branja_in_ni_neposrednega_pisanja(db, identities):
 
 @pytest.fixture
 def offer(db, identities, catalog):
+    """v3: postavka projekta iz cenika (4 x 25 EUR, popust 10 %, izmera 1) + osnutek ponudbe (samo glava). Vrne (projekt, ponudba, postavka_projekta)."""
     users, a, _, _ = identities
     _, material, item = catalog[0]
     project = db.execute("insert into quoteflow.projekt(podjetje_id,stranka_id,naziv,opis,lokacija_izvedbe) values(%s,%s,'Prenova','Opis','Maribor') returning id", (a, users['customer'][0])).fetchone()['id']
-    quote = db.execute("insert into quoteflow.ponudba(projekt_id,stevilka,razlicica) values(%s,'P-1',1) returning id", (project,)).fetchone()['id']
-    line = db.execute("insert into quoteflow.postavka_ponudbe(ponudba_id,postavka_cenika_id,zaporedje,naziv,opis,vrsta_dela,enota,cena_na_enoto,kolicina,popust,stopnja_ddv) values(%s,%s,1,'Polaganje','Opis','Gradnja','m2',25,4,.1,.22) returning id,koncna_cena", (quote, item)).fetchone()
-    db.execute("insert into quoteflow.material_ponudbe values(%s,%s,'Lepilo','kg',2,2)", (line['id'], material))
-    return project, quote, line['id']
+    with as_user(db, users['owner_a']):
+        it = db.execute(f'select * from {Q}dodaj_postavko_iz_cenika(podjetje => %s, projekt => %s, postavka_cenika => %s, kolicina => 4, popust => 0.1)', (a, project, item)).fetchone()['id']
+        db.execute(f'select * from {Q}shrani_izmero(podjetje => %s, projekt => %s, postavka => %s, izmera => null, odstej => false, kosi => 1, dolzina => 1, visina => 1, sirina => null)', (a, project, it))
+        quote = db.execute(f'select * from {Q}ustvari_ponudbo(podjetje => %s, projekt => %s, velja_do => current_date+10)', (a, project)).fetchone()['id']
+    return project, quote, it
+
+
+def lines_of(db, quote): return db.execute('select * from quoteflow.postavka_ponudbe where ponudba_id=%s order by zaporedje', (quote,)).fetchall()
 
 
 @LOCAL
 def test_ponudba_cena_izolacija_in_nespremenljiv_posnetek(db, identities, catalog, offer):
-    users, _, _, _ = identities
-    project, quote, line = offer
-    assert str(db.execute('select koncna_cena from quoteflow.postavka_ponudbe where id=%s', (line,)).fetchone()['koncna_cena']) == '109.80'
-    reject(db, 'update quoteflow.postavka_ponudbe set postavka_cenika_id=%s where id=%s', (catalog[1][2], line))
-    reject(db, "insert into quoteflow.material_ponudbe values(%s,%s,'Tuji','kg',1,1)", (line, catalog[1][1]))
+    users, a, _, _ = identities
+    project, quote, _ = offer
+    assert not lines_of(db, quote), 'osnutek je samo glava'
     with as_user(db, users['customer']):
         assert not db.execute('select * from quoteflow.ponudba').fetchall()
-        reject(db, 'select quoteflow_private.poslji_ponudbo(%s)', (quote,))
+        reject(db, 'select quoteflow_private.poslji_ponudbo(%s,%s,%s)', (a, project, quote))
     with as_user(db, users['owner_a']):
-        db.execute('select quoteflow_private.poslji_ponudbo(%s)', (quote,))
+        db.execute('select quoteflow_private.poslji_ponudbo(%s,%s,%s)', (a, project, quote))
     assert db.execute('select faza from quoteflow.projekt where id=%s', (project,)).fetchone()['faza'] == 'ponudba'
+    (line,) = lines_of(db, quote)
+    assert str(line['koncna_cena']) == '109.80' and str(line['neto']) == '90.00'
+    reject(db, 'update quoteflow.postavka_ponudbe set postavka_cenika_id=%s where id=%s', (catalog[1][2], line['id']))
+    reject(db, "insert into quoteflow.material_ponudbe values(%s,%s,'Tuji','kg',1,1)", (line['id'], catalog[1][1]))
     with as_user(db, users['customer']):
         assert [r['id'] for r in db.execute('select id from quoteflow.ponudba')] == [quote]
     with as_user(db, users['outsider']):
         assert not db.execute('select id from quoteflow.ponudba').fetchall()
-        reject(db, 'select quoteflow_private.odgovori_ponudbo(%s,true)', (quote,))
+        reject(db, 'select quoteflow_private.odgovori_ponudbo(%s,%s,true)', (project, quote))
     for sql, args in [
-        ('update quoteflow.postavka_ponudbe set cena_na_enoto=999 where id=%s', (line,)),
-        ('delete from quoteflow.material_ponudbe where postavka_ponudbe_id=%s', (line,)),
+        ('update quoteflow.postavka_ponudbe set cena_na_enoto=999 where id=%s', (line['id'],)),
+        ('delete from quoteflow.material_ponudbe where postavka_ponudbe_id=%s', (line['id'],)),
+        ('delete from quoteflow.izmera_ponudbe where postavka_ponudbe_id=%s', (line['id'],)),
         ('delete from quoteflow.ponudba where id=%s', (quote,)),
     ]:
         reject(db, sql, args)
     # Updating the reusable source must not rewrite a sent document.
     db.execute('update quoteflow.postavka_cenika set cena_na_enoto=999 where id=%s', (catalog[0][2],))
-    assert str(db.execute('select cena_na_enoto from quoteflow.postavka_ponudbe where id=%s', (line,)).fetchone()['cena_na_enoto']) == '25.0000'
+    assert str(db.execute('select cena_na_enoto from quoteflow.postavka_ponudbe where id=%s', (line['id'],)).fetchone()['cena_na_enoto']) == '25.0000'
 
 
 @LOCAL
 def test_sprejem_racun_termin_izvedba_in_placilo_so_povezani(db, identities, catalog, offer):
-    users, _, _, _ = identities
+    users, a, _, _ = identities
     project, quote, _ = offer
     with as_user(db, users['owner_a']):
-        db.execute('select quoteflow_private.poslji_ponudbo(%s)', (quote,))
+        db.execute('select quoteflow_private.poslji_ponudbo(%s,%s,%s)', (a, project, quote))
     with as_user(db, users['customer']):
-        db.execute('select quoteflow_private.odgovori_ponudbo(%s,true)', (quote,))
+        db.execute('select quoteflow_private.odgovori_ponudbo(%s,%s,true)', (project, quote))
     invoice = db.execute('select * from quoteflow.racun where ponudba_id=%s', (quote,)).fetchone()
     assert invoice['stanje_dokumenta'] == 'osnutek' and invoice['placano_ob'] is None
     assert db.execute('select faza from quoteflow.projekt where id=%s', (project,)).fetchone()['faza'] == 'termin'
     reject(db, 'update quoteflow.racun set placano_ob=now() where id=%s', (invoice['id'],))
+    start = "date_trunc('day',now())"
     with as_user(db, users['owner_b']):
-        reject(db, "select quoteflow_private.doloci_termin(%s,now()+interval '1 day',now()+interval '2 days')", (project,))
+        reject(db, f"select quoteflow_private.doloci_termin(%s,%s,{start},{start}+interval '2 days')", (a, project))
     with as_user(db, users['owner_a']):
-        db.execute("select quoteflow_private.doloci_termin(%s,now()+interval '1 day',now()+interval '2 days')", (project,))
+        db.execute(f"select quoteflow_private.doloci_termin(%s,%s,{start},{start}+interval '2 days')", (a, project))
     assert db.execute('select faza from quoteflow.projekt where id=%s', (project,)).fetchone()['faza'] == 'izvedba'
-    # Marking completed work is company-only; invoice issue/send then permits billing.
-    db.execute('update quoteflow.projekt set izvedba_koncana_ob=now() where id=%s', (project,))
+    # Only the company master finishes the work; invoicing then needs the finished work, tax number and location.
     with as_user(db, users['owner_a']):
-        db.execute("select quoteflow_private.izdaj_racun(%s,'R-1','Stranka','Naslov 2',current_date+14)", (invoice['id'],))
+        reject(db, 'select quoteflow_private.izdaj_racun(%s,%s,%s,%s,current_date+14)', (a, project, 'Ime Priimek', 'Maribor'))
+        db.execute('select quoteflow_private.zakljuci_izvedbo(%s,%s)', (a, project))
+    with as_user(db, users['customer']):
+        reject(db, 'select quoteflow_private.izdaj_racun(%s,%s,%s,%s,current_date+14)', (a, project, 'Ime Priimek', 'Maribor'))
+    with as_user(db, users['owner_a']):
+        db.execute('select quoteflow_private.izdaj_racun(%s,%s,%s,%s,current_date+14)', (a, project, 'Ime Priimek', 'Maribor'))
     assert db.execute('select faza from quoteflow.projekt where id=%s', (project,)).fetchone()['faza'] == 'obracun'
     reject(db, "update quoteflow.racun set prejemnik_naziv='Spremenjeno' where id=%s", (invoice['id'],))
     with as_user(db, users['customer']):
-        reject(db, 'select quoteflow_private.placaj_racun(%s)', (invoice['id'],))
+        reject(db, 'select quoteflow_private.placaj_racun(%s,%s)', (a, project))
     with as_user(db, users['owner_a']):
-        db.execute('select quoteflow_private.placaj_racun(%s)', (invoice['id'],))
+        db.execute('select quoteflow_private.placaj_racun(%s,%s)', (a, project))
     assert db.execute('select placano_ob from quoteflow.racun where id=%s', (invoice['id'],)).fetchone()['placano_ob']
     closed = db.execute('select faza,zakljuceno_ob from quoteflow.projekt where id=%s', (project,)).fetchone()
     assert closed['faza'] == 'zakljucen' and closed['zakljuceno_ob']
 
 
 @LOCAL
-def test_prazna_ponudba_in_poljuben_preskok_faze_nista_dovoljena(db, identities, offer):
-    users, _, _, _ = identities
-    project, quote, _ = offer
-    empty = db.execute("insert into quoteflow.ponudba(projekt_id,stevilka,razlicica) values(%s,'P-1',2) returning id", (project,)).fetchone()['id']
+def test_ponudba_brez_postavk_projekta_in_poljuben_preskok_faze_nista_dovoljena(db, identities, offer):
+    users, a, _, _ = identities
+    project, quote, item = offer
     with as_user(db, users['owner_a']):
-        reject(db, 'select quoteflow_private.poslji_ponudbo(%s)', (empty,))
+        db.execute(f'select * from {Q}odstrani_postavko_projekta(podjetje => %s, projekt => %s, postavka => %s)', (a, project, item))
+        reject(db, 'select quoteflow_private.poslji_ponudbo(%s,%s,%s)', (a, project, quote))
     reject(db, "update quoteflow.projekt set faza='zakljucen',zakljuceno_ob=now() where id=%s", (project,))
 
 
@@ -285,12 +311,12 @@ def test_uporabljeni_starsi_se_ne_selijo_med_podjetji(db, identities, catalog, o
 
 @LOCAL
 def test_odlocitev_o_ponudbi_pripada_samo_stranki(db, identities, offer):
-    users, _, _, _ = identities
-    _, quote, _ = offer
+    users, a, _, _ = identities
+    project, quote, _ = offer
     with as_user(db, users['owner_a']):
-        db.execute('select quoteflow_private.poslji_ponudbo(%s)', (quote,))
-        reject(db, 'select quoteflow_private.odgovori_ponudbo(%s,true)', (quote,))
+        db.execute('select quoteflow_private.poslji_ponudbo(%s,%s,%s)', (a, project, quote))
+        reject(db, 'select quoteflow_private.odgovori_ponudbo(%s,%s,true)', (project, quote))
     with as_user(db, users['customer']):
-        db.execute('select quoteflow_private.odgovori_ponudbo(%s,false)', (quote,))
+        db.execute('select quoteflow_private.odgovori_ponudbo(%s,%s,false)', (project, quote))
     assert db.execute('select stanje from quoteflow.ponudba where id=%s', (quote,)).fetchone()['stanje'] == 'zavrnjena'
     assert not db.execute('select * from quoteflow.racun where ponudba_id=%s', (quote,)).fetchall()

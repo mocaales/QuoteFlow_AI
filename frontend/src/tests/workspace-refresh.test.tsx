@@ -32,6 +32,9 @@ async function editCompany() {
  render(<WorkspacePage client={client} session={session}/>);
  await waitFor(() => expect(screen.queryByText('Preverjam dostop …')).toBeNull());
  await userEvent.click(within(screen.getByRole('navigation', { name: 'Glavna navigacija' })).getByRole('button', { name: 'Podjetja in pravice' }));
+ // Obrazec podjetja je po preoblikovanju v predalu zavihka Podjetja.
+ await userEvent.click(await screen.findByRole('tab', { name: 'Podjetja' }));
+ await userEvent.click(await screen.findByRole('button', { name: 'Dodaj podjetje' }));
  await screen.findByLabelText('Naziv podjetja');
  await userEvent.type(screen.getByLabelText('Naziv podjetja'), 'Neshranjen naziv');
 }

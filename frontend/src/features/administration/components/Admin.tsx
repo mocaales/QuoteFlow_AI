@@ -1,85 +1,68 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getCompanies } from '../../identity/api';
-import type { Podjetje, Uporabnik, Dodelitev, ProsnjaAdmin } from '../../identity/types';
-import { getUsers, getRoles, getApplications, decideApplication, saveCompany, assignRole, setRoleActive } from '../api';
-import Icon from '../../../components/Icon';
-import IconButton from '../../../components/IconButton';
-import { dateTime } from '../../../utils/format';
+import type { Podjetje, ProsnjaAdmin } from '../../identity/types';
+import { getUsers, getRoles, getApplications, decideApplication, saveCompany, assignRole, setRoleActive, type CompanyInput } from '../api';
+import type { AdminRole, AdminUser } from '../types';
+import Applications from './Applications';
+import Companies from './Companies';
+import CompanyRoles from './CompanyRoles';
+import UserRoles from './UserRoles';
 
-const roleNames: Record<Dodelitev['vloga'], string> = { admin: 'Admin', stranka: 'Stranka', mojster: 'Mojster', delavec: 'Delavec' };
+type Tab = 'podjetja' | 'uporabniki' | 'prosnje' | 'seznam';
 export default function Admin({ client }: { client: SupabaseClient }) {
  const [companies, setCompanies] = useState<Podjetje[]>([]);
- const [users, setUsers] = useState<Uporabnik[]>([]);
- const [roles, setRoles] = useState<Dodelitev[]>([]);
+ const [users, setUsers] = useState<AdminUser[]>([]);
+ const [roles, setRoles] = useState<AdminRole[]>([]);
  const [applications, setApplications] = useState<ProsnjaAdmin[]>([]);
- const [edit, setEdit] = useState<Podjetje | null>(null);
- const [name, setName] = useState('');
- const [status, setStatus] = useState(true);
- const [role, setRole] = useState('stranka');
+ const [tab, setTab] = useState<Tab>('podjetja');
+ const [company, setCompany] = useState<string | null>(null);
+ const [user, setUser] = useState<string | null>(null);
+ const [loaded, setLoaded] = useState(false);
  const [busy, setBusy] = useState(false);
  const [error, setError] = useState('');
  const [notice, setNotice] = useState('');
- const [loading, setLoading] = useState(true);
- async function load() {
+ const seq = useRef(0);
+ const load = useCallback(async () => {
+  const id = ++seq.current;
   const [c, u, r, a] = await Promise.all([getCompanies(client), getUsers(client), getRoles(client), getApplications(client)]);
+  if (id !== seq.current) return;
   setCompanies(c); setUsers(u); setRoles(r); setApplications(Array.isArray(a) ? a : []);
- }
- useEffect(() => { let active = true; load().catch(e => { if (active) setError(e.message); }).finally(() => { if (active) setLoading(false); }); return () => { active = false; }; }, [client]);
+ }, [client]);
+ const start = useCallback(() => { setError(''); setLoaded(false); load().then(() => setLoaded(true), e => setError(e instanceof Error ? e.message : 'Podatkov ni mogoče naložiti.')); }, [load]);
+ useEffect(() => { start(); return () => { seq.current++; }; }, [start]);
  async function mutate(action: () => Promise<unknown>, message: string) {
   setBusy(true); setError(''); setNotice('');
-  try { await action(); await load(); setNotice(message); }
-  catch (e) { setError(e instanceof Error ? e.message : 'Spremembe ni mogoče shraniti.'); }
+  try { await action(); await load(); setNotice(message); return true; }
+  catch (e) { setError(e instanceof Error ? e.message : 'Spremembe ni mogoče shraniti.'); return false; }
   finally { setBusy(false); }
  }
- function submitCompany(e: FormEvent<HTMLFormElement>) {
-  e.preventDefault(); const data = new FormData(e.currentTarget);
-  void mutate(async () => {
-   await saveCompany(client, edit, { naziv:name.trim(), lastnik_id:edit?.lastnik_id ?? String(data.get('lastnik')), maticna_stevilka:String(data.get('maticna')).trim(), davcna_stevilka:String(data.get('davcna')).trim() || null, naslov:String(data.get('naslov')).trim(), aktivno:status });
-   setEdit(null); setName(''); setStatus(true);
-  }, 'Podjetje je shranjeno.');
+ const change = (id: string, active: boolean, message: string) => void mutate(() => setRoleActive(client, id, active), message);
+ const assign = (uporabnik_id: string, podjetje_id: string, vloga: 'mojster' | 'delavec') => mutate(() => assignRole(client, { uporabnik_id, podjetje_id, vloga }), 'Vloga je dodeljena.');
+ const save = (item: Podjetje | null, data: CompanyInput) => mutate(() => saveCompany(client, item, data), 'Podjetje je shranjeno.');
+ const pending = applications.filter(a => a.stanje === 'oddana').length;
+ const tabs: [Tab, string][] = [['podjetja', 'Po podjetjih'], ['uporabniki', 'Po uporabnikih'], ['prosnje', 'Prošnje mojstrov'], ['seznam', 'Podjetja']];
+ function keys(e: KeyboardEvent) {
+  const i = tabs.findIndex(t => t[0] === tab), next = e.key === 'ArrowRight' ? (i + 1) % tabs.length : e.key === 'ArrowLeft' ? (i + tabs.length - 1) % tabs.length : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : -1;
+  if (next < 0) return;
+  e.preventDefault(); setTab(tabs[next][0]); document.getElementById(`admin-tab-${tabs[next][0]}`)?.focus();
  }
- function assign(e: FormEvent<HTMLFormElement>) {
-  e.preventDefault(); const data = Object.fromEntries(new FormData(e.currentTarget));
-  void mutate(() => assignRole(client, { ...data, podjetje_id: role === 'stranka' ? null : data.podjetje_id }), 'Poslovna vloga je dodeljena.');
- }
+ const alert = error ? <p role="alert" className="alert">{error}</p> : null;
+ const drawerOpen = () => document.querySelector('dialog[open]') !== null;
  return <>
-  <div className="page-title"><div><h1>Podjetja in pravice</h1><p>{loading ? 'Upravljajte podjetja in dostop registriranih uporabnikov.' : `${companies.filter(c => c.aktivno).length} aktivnih podjetij in ${roles.filter(r => r.aktivna).length} aktivnih dodelitev vlog.`}</p></div></div>
-  {error && <p role="alert" className="alert">{error}</p>}{notice && <p role="status" className="notice">{notice}</p>}
-  {loading ? <p role="status" className="loading-state">Nalagam podatke …</p> : <>
-  <section className="admin-section"><h2>Prošnje mojstrov</h2>
-   <div className="table-wrap"><table className="data-table list-table"><caption className="sr-only">Prošnje za mojstra</caption><thead><tr><th>Podjetje</th><th>Vlagatelj</th><th className="num">Oddano</th><th>Stanje</th><th><span className="sr-only">Dejanja</span></th></tr></thead><tbody>
-    {applications.map(a => <tr key={a.id}><td><strong>{a.naziv_podjetja}</strong><span className="muted"> · {a.maticna_stevilka}</span></td><td data-label="Vlagatelj:">{a.e_posta}</td><td className="num" data-label="Oddano:">{dateTime(a.oddano_ob)}</td><td><span className={`status-badge ${a.stanje === 'oddana' ? 'pending' : a.stanje === 'odobrena' ? 'confirmed' : 'inactive'}`}>{a.stanje === 'oddana' ? 'Oddana' : a.stanje === 'odobrena' ? 'Odobrena' : 'Zavrnjena'}</span></td><td className="num">{a.stanje === 'oddana' && <><IconButton icon="check" label={`Odobri ${a.naziv_podjetja}`} tip="Odobri" disabled={busy} onClick={() => void mutate(() => decideApplication(client, a.id, true), 'Prošnja je odobrena.')}/><IconButton icon="close" label={`Zavrni ${a.naziv_podjetja}`} tip="Zavrni" disabled={busy} onClick={() => void mutate(() => decideApplication(client, a.id, false), 'Prošnja je zavrnjena.')}/></>}</td></tr>)}
-    {!applications.length && <tr><td colSpan={5} className="muted">Prošenj še ni.</td></tr>}
-   </tbody></table></div>
-  </section>
-  <section className="admin-section narrow"><h2>Podjetja</h2>
-   <form className="inline-form" onSubmit={submitCompany}>
-    <label>Naziv podjetja<input value={name} onChange={e => setName(e.target.value)} required maxLength={200}/></label>
-    {!edit && <label>Lastnik podjetja<select name="lastnik" required defaultValue=""><option value="" disabled>Izberite lastnika</option>{users.map(u => <option key={u.id} value={u.id}>{u.e_posta}</option>)}</select></label>}
-    <label>Matična številka<input key={`maticna-${edit?.id ?? 'new'}`} name="maticna" defaultValue={edit?.maticna_stevilka} required maxLength={30}/></label>
-    <label>Davčna številka<input key={`davcna-${edit?.id ?? 'new'}`} name="davcna" defaultValue={edit?.davcna_stevilka ?? ''} maxLength={30}/></label>
-    <label>Naslov podjetja<input key={`naslov-${edit?.id ?? 'new'}`} name="naslov" defaultValue={edit?.naslov} required maxLength={500}/></label>
-    {edit && <label>Stanje<select value={status ? 'aktivno' : 'neaktivno'} onChange={e => setStatus(e.target.value === 'aktivno')}><option value="aktivno">Aktivno</option><option value="neaktivno">Neaktivno</option></select></label>}
-    <button disabled={busy || !name.trim()}><Icon name={edit ? 'check' : 'plus'}/>{edit ? 'Shrani spremembe' : 'Dodaj podjetje'}</button>
-    {edit && <button type="button" className="secondary" onClick={() => { setEdit(null); setName(''); setStatus(true); }}><Icon name="close"/>Prekliči</button>}
-   </form>
-   <div className="table-wrap"><table className="data-table"><caption className="sr-only">Registrirana podjetja</caption><thead><tr><th>Naziv</th><th>Stanje</th><th><span className="sr-only">Dejanja</span></th></tr></thead><tbody>
-    {companies.map(c => <tr key={c.id}><td><strong>{c.naziv}</strong></td><td><span className={`status-badge ${c.aktivno ? 'confirmed' : 'inactive'}`}>{c.aktivno ? 'Aktivno' : 'Neaktivno'}</span></td><td className="num"><IconButton icon="pen" label={`Uredi ${c.naziv}`} tip="Uredi" disabled={busy} onClick={() => { setEdit(c); setName(c.naziv); setStatus(c.aktivno); }}/></td></tr>)}
-    {!companies.length && <tr><td colSpan={3} className="muted">Podjetij še ni. Dodajte prvo podjetje.</td></tr>}
-   </tbody></table></div>
-  </section>
-  <section className="admin-section"><h2>Uporabniki in poslovne vloge</h2><p className="muted">Uporabnik se najprej registrira. Stranka je globalna vloga. Mojster in delavec imata pravice samo pri izbranem podjetju.</p>
-   <form className="inline-form" onSubmit={assign}>
-    <label>Uporabnik<select name="uporabnik_id" required defaultValue=""><option value="" disabled>Izberite uporabnika</option>{users.map(u => <option key={u.id} value={u.id}>{u.e_posta}</option>)}</select></label>
-    <label>Podjetje<select name="podjetje_id" disabled={role === 'stranka'} required={role !== 'stranka'} defaultValue=""><option value="" disabled>Izberite podjetje</option>{companies.filter(c => c.aktivno).map(c => <option key={c.id} value={c.id}>{c.naziv}</option>)}</select></label>
-    <label>Vloga<select name="vloga" value={role} onChange={e => setRole(e.target.value)}><option value="stranka">Stranka</option><option value="mojster">Mojster</option><option value="delavec">Delavec</option></select></label>
-    <button disabled={busy || !users.length || (role !== 'stranka' && !companies.some(c => c.aktivno))}><Icon name="user-plus"/>Dodeli vlogo</button>
-   </form>
-   <div className="table-wrap"><table className="data-table list-table"><caption className="sr-only">Dodelitve uporabniških vlog</caption><thead><tr><th>Uporabnik</th><th>Podjetje</th><th>Vloga</th><th>Stanje</th><th><span className="sr-only">Dejanja</span></th></tr></thead><tbody>
-    {roles.map(r => <tr key={r.id}><td><strong>{r.e_posta}</strong></td><td className={r.naziv ? '' : 'muted'}>{r.naziv || 'Globalna vloga'}</td><td data-label="Vloga:">{roleNames[r.vloga]}</td><td><span className={`status-badge ${r.aktivna ? 'confirmed' : 'inactive'}`}>{r.aktivna ? 'Aktivna' : 'Odvzeta'}</span></td><td className="num">{r.vloga !== 'admin' && <IconButton icon={r.aktivna ? 'revoke' : 'restore'} label={r.aktivna ? 'Odvzemi' : 'Aktiviraj'} tip={r.aktivna ? 'Odvzemi vlogo' : 'Ponovno aktiviraj'} disabled={busy} onClick={() => void mutate(() => setRoleActive(client, r.id, !r.aktivna), r.aktivna ? 'Vloga je odvzeta.' : 'Vloga je ponovno aktivna.')}/>}</td></tr>)}
-    {!roles.length && <tr><td colSpan={5} className="muted">Dodeljenih vlog še ni.</td></tr>}
-   </tbody></table></div>
-  </section></>}
+  <div className="page-title"><div><h1>Podjetja in pravice</h1><p>Kdo ima kje katero vlogo, in kako to spremenim?</p></div></div>
+  {!loaded ? (error ? <>{alert}<button type="button" className="secondary" onClick={start}>Poskusi znova</button></> : <p role="status" className="loading-state">Nalagam podatke …</p>) : <>
+   {notice && <p role="status" className="notice">{notice}</p>}
+   {!drawerOpen() && alert}
+   <div className="tabs" role="tablist" aria-label="Pogledi" onKeyDown={keys}>
+    {tabs.map(([id, label]) => <button key={id} id={`admin-tab-${id}`} type="button" role="tab" className="tab" aria-selected={tab === id} aria-controls="admin-panel" tabIndex={tab === id ? 0 : -1} onClick={() => { setTab(id); setNotice(''); }}>{label}{id === 'prosnje' && pending > 0 && <> <span className="count">({pending})</span></>}</button>)}
+   </div>
+   <div id="admin-panel" role="tabpanel" aria-labelledby={`admin-tab-${tab}`} className="admin-section">
+    {tab === 'podjetja' && <CompanyRoles companies={companies} users={users} roles={roles} selected={company} busy={busy} error={alert} onSelect={setCompany} onChange={change} onAssign={assign} onClearError={() => setError('')}/>}
+    {tab === 'uporabniki' && <UserRoles companies={companies} users={users} roles={roles} selected={user} busy={busy} error={alert} onSelect={setUser} onOpenCompany={id => { setCompany(id); setTab('podjetja'); }} onChange={change} onAssign={assign} onClearError={() => setError('')}/>}
+    {tab === 'prosnje' && <Applications items={applications} busy={busy} onDecide={(id, approve) => void mutate(() => decideApplication(client, id, approve), approve ? 'Prošnja je odobrena.' : 'Prošnja je zavrnjena.')}/>}
+    {tab === 'seznam' && <Companies companies={companies} users={users} busy={busy} error={alert} onSave={save} onClearError={() => setError('')}/>}
+   </div>
+  </>}
  </>;
 }
