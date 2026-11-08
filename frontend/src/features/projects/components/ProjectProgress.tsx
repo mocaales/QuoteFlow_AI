@@ -1,3 +1,4 @@
+import { useToast } from '../../../lib/toast';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import ActionAlert from '../../../components/ActionAlert';
@@ -14,17 +15,17 @@ export default function ProjectProgress({ client, companyId, project, onChange }
  const [busy, setBusy] = useState(false);
  const [error, setError] = useState('');
  const [where, setWhere] = useState<'termin' | 'izvedba'>('termin');
- const [notice, setNotice] = useState('');
+ const toast = useToast();
  const heading = useRef<HTMLHeadingElement>(null);
  useEffect(() => { setCurrent(project); }, [project]);
  async function run(section: 'termin' | 'izvedba', action: () => Promise<Project>, message: string) {
-  setBusy(true); setError(''); setNotice(''); setWhere(section);
-  try { const next = await action(); setCurrent(previous => ({ ...previous, ...next })); onChange?.(); setNotice(message); if (section === 'izvedba') heading.current?.focus(); }
+  setBusy(true); setError(''); setWhere(section);
+  try { const next = await action(); setCurrent(previous => ({ ...previous, ...next })); onChange?.(); toast(message); if (section === 'izvedba') heading.current?.focus(); }
   catch (e) { setError(e instanceof Error ? e.message : 'Spremembe ni mogoče shraniti.'); }
   finally { setBusy(false); }
  }
  function schedule(event: FormEvent<HTMLFormElement>) {
-  event.preventDefault(); setNotice(''); setWhere('termin'); const data = new FormData(event.currentTarget), from = String(data.get('termin_od') ?? ''), to = String(data.get('termin_do') ?? '');
+  event.preventDefault(); setWhere('termin'); const data = new FormData(event.currentTarget), from = String(data.get('termin_od') ?? ''), to = String(data.get('termin_do') ?? '');
   if (!from || !to) { setError('Vnesite začetek in konec termina.'); return; }
   const start = new Date(from), end = new Date(to);
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) { setError('Vnesite veljaven začetek in konec termina.'); return; }
@@ -37,7 +38,6 @@ export default function ProjectProgress({ client, companyId, project, onChange }
  return <section className="quote-editor" aria-busy={busy}>
   <div className="section-heading"><h2 tabIndex={-1} ref={heading}>Potek projekta</h2><span className="status-badge confirmed">{phases[index]?.[1] ?? current.faza}</span></div>
   <ol className="phase-steps" aria-label="Faze projekta">{phases.map(([id, label], i) => <li key={id} aria-current={i === index ? 'step' : undefined}><span className={`status-badge ${i < index ? 'confirmed' : i === index ? 'pending' : ''}`}>{label}</span></li>)}</ol>
-  {notice && <p role="status" className="notice"><Icon name="check"/>{notice}</p>}
   {index < 3 && <section className="panel"><h3>Termin</h3><p>Termin izvedbe je mogoče določiti po sprejeti ponudbi.</p></section>}
   {index >= 3 && <section className="panel"><h3>Termin</h3>
    {editable

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen, within, waitFor } from '@testing-library/react';
+import { act, screen, within, waitFor } from '@testing-library/react';
+import { render, expectToast } from './render';
 import userEvent from '@testing-library/user-event';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
 import SupplierWorkspace from '../features/supplier/components/SupplierWorkspace';
@@ -24,7 +25,7 @@ describe('Cenik in materiali',()=>{
   await user.type(form.getByLabelText('Cena na enoto (€)'),'45.125');
   await user.clear(form.getByLabelText('DDV (%)'));await user.type(form.getByLabelText('DDV (%)'),'22');
   await user.click(form.getByRole('button',{name:'Shrani postavko'}));
-  await waitFor(()=>expect(screen.queryByRole('dialog')).toBeNull());
+  await waitFor(()=>expect(screen.queryByRole('dialog')).toBeNull());await expectToast('Postavka je shranjena.');
   expect(mockedApi).toHaveBeenCalledWith(client,'/podjetja/a/cenik','POST',expect.objectContaining({naziv:'Polaganje',vrsta_dela_id:'v1',enota:'m2',cena_na_enoto:'45.125',stopnja_ddv:'0.220000'}));
   expect(Object.keys(mockedApi.mock.calls.find(c=>c[2]==='POST')![3] as object)).not.toContain('vrsta_dela');
  });

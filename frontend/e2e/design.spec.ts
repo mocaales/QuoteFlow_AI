@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockApi, mockFlow, signIn, type Mock } from './fixtures';
+import { layoutProblems, rowAction } from './layout';
 
 // The visual system as measurable rules (docs/razvoj/frontend-arhitektura.md, "Vizualni sistem").
 // Every screen is checked at desktop and phone width and saved for review in test-results/screens/.
@@ -85,6 +86,7 @@ async function audit(page: Page) {
 async function check(page: Page, screen: string, project: string) {
  await page.evaluate(async () => { await document.fonts.ready; await Promise.allSettled(document.getAnimations().map(a => a.finished)); });
  await page.screenshot({ path: `test-results/screens/${screen}-${project}.png`, fullPage: true });
+ expect.soft(await layoutProblems(page), 'layout').toEqual([]);
  expect(await audit(page)).toEqual([]);
 }
 
@@ -183,8 +185,12 @@ test.describe('Prijavljen mojster in admin', () => {
   await open(page, 'projekti');
   for (const phase of ['Pregled', 'Ponudba', 'Izvedba']) await expect(page.getByRole('heading', { name: phase })).toBeVisible();
   await expect(page.getByText('Menjava oken')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Zahtevaj ogled Obnova kopalnice' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Zahtevaj ogled Menjava oken' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Več dejanj Obnova kopalnice' }).click();
+  await expect(page.getByRole('menuitem', { name: 'Zahtevaj ogled' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Več dejanj Menjava oken' }).click();
+  await expect(page.getByRole('menuitem', { name: 'Zahtevaj ogled' })).toHaveCount(0);
+  await page.keyboard.press('Escape');
   for (const label of ['E-pošta stranke', 'Naziv', 'Lokacija izvedbe', 'Opis']) await expect(page.getByLabel(label)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Ustvari projekt' })).toBeVisible();
   await check(page, 'projekti', info.project.name);
@@ -219,7 +225,7 @@ test.describe('Osnutek ponudbe', () => {
  async function editor(page: Page, quote: 'osnutek' | 'prazen' | 'poslana' | 'brez') {
   await mockApi(page, { quote }); await signIn(page);
   await open(page, 'projekti');
-  await page.getByRole('button', { name: 'Ponudba Obnova kopalnice' }).click();
+  await rowAction(page, 'Obnova kopalnice', 'Ponudba');
  }
 
  test('osnutek s postavkami pokaže številko, postavke in vsote', async ({ page }, info) => {
@@ -263,7 +269,7 @@ test.describe('Osnutek ponudbe', () => {
 test.describe('Dodajanje iz cenika na projektu', () => {
  test('predal ponuja aktivne postavke cenika, neaktivne ne', async ({ page }, info) => {
   await mockApi(page); await signIn(page); await open(page, 'projekti');
-  await page.getByRole('button', { name: 'Postavke Obnova kopalnice' }).click();
+  await rowAction(page, 'Obnova kopalnice', 'Postavke');
   await page.getByRole('button', { name: 'Dodaj iz cenika' }).click();
   const panel = page.getByRole('dialog');
   await expect(panel.getByText('Polaganje keramike')).toBeVisible();
@@ -311,7 +317,7 @@ test.describe('Termin in izvedba', () => {
  async function progress(page: Page, options: Mock) {
   await mockApi(page, options); await signIn(page);
   await open(page, 'projekti');
-  await page.getByRole('button', { name: 'Izvedba Nov estrih' }).click();
+  await rowAction(page, 'Nov estrih', 'Izvedba');
   await expect(page.getByRole('heading', { level: 1, name: 'Nov estrih' })).toBeVisible();
  }
 
@@ -344,7 +350,7 @@ test.describe('Račun', () => {
  async function panel(page: Page, options: Mock) {
   await mockApi(page, options); await signIn(page);
   await open(page, 'projekti');
-  await page.getByRole('button', { name: 'Račun Nov estrih' }).click();
+  await rowAction(page, 'Nov estrih', 'Račun');
   await expect(page.getByRole('heading', { level: 1, name: 'Nov estrih' })).toBeVisible();
  }
  const totals = async (page: Page) => {
@@ -606,7 +612,7 @@ test.describe('Povabila v podjetja (Pregled)', () => {
 test.describe('Postavke projekta in izmere', () => {
  async function items(page: Page, options: Mock = {}) {
   await mockApi(page, options); await signIn(page); await open(page, 'projekti');
-  await page.getByRole('button', { name: 'Postavke Obnova kopalnice' }).click();
+  await rowAction(page, 'Obnova kopalnice', 'Postavke');
   await expect(page.getByRole('heading', { level: 1, name: 'Obnova kopalnice' })).toBeVisible();
  }
 
@@ -626,7 +632,7 @@ test.describe('Postavke projekta in izmere', () => {
   await expect(page.getByText('Projekt še nima postavk.')).toBeVisible(); await expect(page.getByRole('button', { name: 'Nova postavka' })).toBeVisible();
   await check(page, 'postavke-prazno', info.project.name);
   await mockApi(page, { items: 'napaka' }); await page.reload(); await open(page, 'projekti').catch(() => undefined);
-  await page.getByRole('button', { name: 'Postavke Obnova kopalnice' }).click();
+  await rowAction(page, 'Obnova kopalnice', 'Postavke');
   await expect(page.getByRole('alert')).toContainText('Podatkovna baza trenutno ni na voljo.'); await check(page, 'postavke-napaka', info.project.name);
  });
 
@@ -693,12 +699,12 @@ test('celoten potek: projekt, ponudba, sprejem, termin, izvedba, račun in plač
  await expect(page.getByRole('status').filter({ hasText: 'Projekt je ustvarjen.' })).toBeVisible();
  await expect(page.getByRole('heading', { level: 2, name: 'Pregled' })).toBeVisible();
  // mojster: osnutek ponudbe je brez postavk projekta onemogočen
- await page.getByRole('button', { name: 'Ponudba Prenova kuhinje' }).click();
+ await rowAction(page, 'Prenova kuhinje', 'Ponudba');
  await page.getByRole('button', { name: 'Ustvari osnutek ponudbe' }).click();
  await expect(page.getByRole('button', { name: 'Pošlji stranki' })).toBeDisabled();
  await back();
  // mojster: postavka projekta z vrsto dela in izmero 4 x 2 m2 (model v3)
- await page.getByRole('button', { name: 'Postavke Prenova kuhinje' }).click();
+ await rowAction(page, 'Prenova kuhinje', 'Postavke');
  await expect(page.getByText('Projekt še nima postavk.')).toBeVisible();
  await page.getByRole('button', { name: 'Nova postavka' }).click();
  const dialog = page.getByRole('dialog');
@@ -720,7 +726,7 @@ test('celoten potek: projekt, ponudba, sprejem, termin, izvedba, račun in plač
  await page.getByRole('dialog').getByRole('button', { name: 'Shrani postavko' }).click(); await edited;
  await expect(page.getByRole('dialog')).toHaveCount(0);
  // ponudba: predogled živih postavk projekta, nato pošiljanje
- await page.getByRole('button', { name: 'Ponudba Prenova kuhinje' }).click();
+ await page.getByRole('button', { name: 'Ponudba Prenova kuhinje' }).click(); // detail view keeps plain tab buttons
  await expect(page.getByRole('group', { name: 'Vsote ponudbe' })).toContainText(/1\.?220,00\s?€/);
  await expect(page.getByRole('button', { name: 'Ročni vnos' })).toHaveCount(0);
  await expect(page.getByRole('button', { name: 'Pošlji stranki' })).toBeEnabled();
@@ -742,11 +748,11 @@ test('celoten potek: projekt, ponudba, sprejem, termin, izvedba, račun in plač
  await open(page, 'projekti');
  await expect(page.getByRole('heading', { level: 2, name: 'Termin' })).toBeVisible();
  // ponudba je v fazi termin samo za branje
- await page.getByRole('button', { name: 'Ponudba Prenova kuhinje' }).click();
+ await rowAction(page, 'Prenova kuhinje', 'Ponudba');
  await expect(page.getByRole('heading', { name: /P-2026-002/ })).toBeVisible();
  for (const name of ['Dodaj iz cenika', 'Ročni vnos', 'Uredi Beljenje sten', 'Odstrani Beljenje sten', 'Pošlji stranki', 'Pripravi novo različico']) await expect(page.getByRole('button', { name })).toHaveCount(0);
  await back();
- await page.getByRole('button', { name: 'Izvedba Prenova kuhinje' }).click();
+ await rowAction(page, 'Prenova kuhinje', 'Izvedba');
  await page.getByLabel('Začetek termina').fill('2026-11-10T08:00'); await page.getByLabel('Konec termina').fill('2026-11-11T16:00');
  await page.getByRole('button', { name: 'Potrdi termin' }).click();
  await page.getByRole('button', { name: 'Zaključi izvedbo' }).click();
@@ -754,7 +760,7 @@ test('celoten potek: projekt, ponudba, sprejem, termin, izvedba, račun in plač
  await check(page, 'potek-izvedba-koncana', info.project.name);
  await back();
  // mojster: račun in plačilo
- await page.getByRole('button', { name: 'Račun Prenova kuhinje' }).click();
+ await rowAction(page, 'Prenova kuhinje', 'Račun');
  await expect(page.getByRole('button', { name: 'Izdaj račun' })).toBeEnabled();
  await expect(page.getByLabel('Prejemnik', { exact: true })).toHaveValue('Janez Kranjc'); await expect(page.getByLabel('Naslov prejemnika')).toHaveValue('Maribor, Glavni trg 1');
  await check(page, 'racun-izdaja-obrazec', info.project.name);
@@ -791,4 +797,32 @@ test('prijava ustreza vizualnemu sistemu', async ({ page }, info) => {
  await page.goto('/');
  await expect(page.getByRole('heading', { level: 1, name: 'Prijava' })).toBeVisible();
  await check(page, 'prijava', info.project.name);
+});
+
+test.describe('Obvestila (toast)', () => {
+ test.beforeEach(async ({ page }) => { await mockApi(page); await signIn(page); });
+ test('po uspešnem shranjevanju postavke se pojavi toast v vidnem polju, ne prekriva glave in po 5 s izgine', async ({ page }) => {
+  await open(page, 'cenik');
+  await page.getByRole('button', { name: 'Nova postavka' }).click();
+  const d = page.getByRole('dialog');
+  await d.getByLabel('Naziv').fill('Barvanje fasade'); await d.getByLabel('Opis').fill('Dve plasti'); await d.getByLabel('Vrsta dela').selectOption('v1'); await d.getByLabel('Cena na enoto (€)').fill('18.50');
+  await d.getByRole('button', { name: 'Shrani postavko' }).click();
+  await page.mouse.move(0, 0);
+  const toast = page.locator('.toast-region .toast');
+  await expect(toast).toHaveCount(1); await expect(toast).toContainText('Postavka je shranjena.');
+  await expect(page.locator('main p.notice')).toHaveCount(0);
+  const started = Date.now();
+  const box = (await toast.boundingBox())!, view = page.viewportSize()!;
+  expect(box.x).toBeGreaterThanOrEqual(0); expect(box.y).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(view.width); expect(box.y + box.height).toBeLessThanOrEqual(view.height);
+  for (const button of await page.locator('header button, .page-title button, main > section > header button').all()) {
+   if (!(await button.isVisible())) continue;
+   const b = (await button.boundingBox())!;
+   const overlap = box.x < b.x + b.width && b.x < box.x + box.width && box.y < b.y + b.height && b.y < box.y + box.height;
+   expect(overlap, `toast covers ${await button.innerText()}`).toBe(false);
+  }
+  expect(await layoutProblems(page)).toEqual([]);
+  await expect(toast).toBeHidden({ timeout: 7000 });
+  expect(Date.now() - started).toBeGreaterThanOrEqual(4000);
+ });
 });

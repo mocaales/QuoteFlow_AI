@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
+import { render, expectToast } from './render';
 import userEvent from '@testing-library/user-event';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import Admin from '../features/administration/components/Admin';
@@ -68,7 +69,7 @@ describe('Administracija: zavihki',()=>{
  });
  it('med nalaganjem pokaže stanje nalaganja, ob napaki opozorilo in poskusi znova',async()=>{
   loadFailures=1;render(<Admin client={client}/>);
-  expect(screen.getByRole('status').textContent).toContain('Nalagam podatke …');
+  expect(screen.getAllByRole('status').map(s=>s.textContent).join(' ')).toContain('Nalagam podatke …');
   expect((await screen.findByRole('alert')).textContent).toContain('Podatkovna baza trenutno ni na voljo.');
   expect(screen.queryByRole('tablist')).toBeNull();
   await pick('Poskusi znova');expect(await screen.findByRole('tablist')).toBeTruthy();expect(screen.queryByRole('alert')).toBeNull();
@@ -118,14 +119,14 @@ describe('Po podjetjih',()=>{
  it('potrjen odvzem pošlje PATCH, osveži in sporoči uspeh brez vrstice',async()=>{
   await company();await pick('Odvzemi vlogo Delavec uporabniku boris@mail.si');await pick('Odvzemi vlogo');
   await waitFor(()=>expect(mockedApi).toHaveBeenCalledWith(client,'/admin/vloge/r3','PATCH',{aktivna:false}));
-  expect((await screen.findByRole('status')).textContent).toContain('Vloga je odvzeta.');
+  await expectToast('Vloga je odvzeta.');
   await waitFor(()=>expect(within(members()).queryByText('boris@mail.si')).toBeNull());
  });
  it('ponovna aktivacija odvzete vloge ne zahteva potrditve',async()=>{
   await company();await select('Stanje','Odvzete');
   await pick(/Ponovno aktiviraj.*cene@mail\.si/);
   await waitFor(()=>expect(mockedApi).toHaveBeenCalledWith(client,'/admin/vloge/r4','PATCH',{aktivna:true}));
-  expect((await screen.findByRole('status')).textContent).toContain('Vloga je ponovno aktivna.');
+  await expectToast('Vloga je ponovno aktivna.');
  });
  it('lastnik ima onemogočen odvzem z vidno razlago, odvzem ne pošlje ničesar',async()=>{
   await company();const r=memberRow('ana@gradnje.si');
@@ -152,7 +153,7 @@ describe('Po podjetjih',()=>{
   await company();await pick('Dodaj člana');const d=within(await screen.findByRole('dialog'));
   await userEvent.selectOptions(d.getByLabelText('Uporabnik'),'u6');await userEvent.click(d.getByRole('button',{name:'Dodeli vlogo'}));
   await waitFor(()=>expect(mockedApi).toHaveBeenCalledWith(client,'/admin/vloge','POST',{uporabnik_id:'u6',podjetje_id:'A',vloga:'delavec'}));
-  expect((await screen.findByRole('status')).textContent).toContain('Vloga je dodeljena.');
+  await expectToast('Vloga je dodeljena.');
  });
  it('neaktivno podjetje ne dovoli dodajanja članov in pove razlog',async()=>{
   await company('Parket Plus');expect((screen.getByRole('button',{name:'Dodaj člana'}) as HTMLButtonElement).disabled).toBe(true);

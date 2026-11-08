@@ -26,7 +26,7 @@ export default function CompanyRoles({ companies, users, roles, selected, busy, 
    {!shown.length && (companies.length ? <div className="empty-state"><p>{`Ni zadetkov za »${query}«.`}</p><button type="button" className="secondary" onClick={() => setQuery('')}>Počisti iskanje</button></div> : <div className="empty-state"><p>Podjetij še ni.</p></div>)}
   </div>
   <div className="split-detail">
-   {!company ? <div className="empty-state"><p>Izberite podjetje na levi.</p></div> : <>
+   {!company ? <div className="full-empty"><Icon name="users"/><h2>Izberite podjetje</h2><p>Izberite podjetje na levi.</p></div> : <>
     <button type="button" className="split-back" onClick={() => onSelect(null)}>‹ Podjetja</button>
     <div className="split-head"><h2>{company.naziv}</h2><span className={`status-badge ${company.aktivno ? 'confirmed' : 'inactive'}`}>{company.aktivno ? 'Aktivno' : 'Neaktivno'}</span>
      <button type="button" disabled={busy || !company.aktivno} onClick={() => setAdding(true)}><Icon name="user-plus"/>Dodaj člana</button></div>

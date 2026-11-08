@@ -8,6 +8,8 @@ import Applications from './Applications';
 import Companies from './Companies';
 import CompanyRoles from './CompanyRoles';
 import UserRoles from './UserRoles';
+import useTabsOverflow from '../../../utils/tabsOverflow';
+import { useToast } from '../../../lib/toast';
 
 type Tab = 'podjetja' | 'uporabniki' | 'prosnje' | 'seznam';
 export default function Admin({ client }: { client: SupabaseClient }) {
@@ -21,7 +23,7 @@ export default function Admin({ client }: { client: SupabaseClient }) {
  const [loaded, setLoaded] = useState(false);
  const [busy, setBusy] = useState(false);
  const [error, setError] = useState('');
- const [notice, setNotice] = useState('');
+ const toast = useToast(), tabsRef = useTabsOverflow();
  const seq = useRef(0);
  const load = useCallback(async () => {
   const id = ++seq.current;
@@ -32,8 +34,8 @@ export default function Admin({ client }: { client: SupabaseClient }) {
  const start = useCallback(() => { setError(''); setLoaded(false); load().then(() => setLoaded(true), e => setError(e instanceof Error ? e.message : 'Podatkov ni mogoče naložiti.')); }, [load]);
  useEffect(() => { start(); return () => { seq.current++; }; }, [start]);
  async function mutate(action: () => Promise<unknown>, message: string) {
-  setBusy(true); setError(''); setNotice('');
-  try { await action(); await load(); setNotice(message); return true; }
+  setBusy(true); setError('');
+  try { await action(); await load(); toast(message); return true; }
   catch (e) { setError(e instanceof Error ? e.message : 'Spremembe ni mogoče shraniti.'); return false; }
   finally { setBusy(false); }
  }
@@ -45,17 +47,16 @@ export default function Admin({ client }: { client: SupabaseClient }) {
  function keys(e: KeyboardEvent) {
   const i = tabs.findIndex(t => t[0] === tab), next = e.key === 'ArrowRight' ? (i + 1) % tabs.length : e.key === 'ArrowLeft' ? (i + tabs.length - 1) % tabs.length : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : -1;
   if (next < 0) return;
-  e.preventDefault(); setTab(tabs[next][0]); document.getElementById(`admin-tab-${tabs[next][0]}`)?.focus();
+  e.preventDefault(); setTab(tabs[next][0]); const t = document.getElementById(`admin-tab-${tabs[next][0]}`); t?.focus(); t?.scrollIntoView?.({ inline: 'center', block: 'nearest' });
  }
  const alert = error ? <p role="alert" className="alert">{error}</p> : null;
  const drawerOpen = () => document.querySelector('dialog[open]') !== null;
  return <>
   <div className="page-title"><div><h1>Podjetja in pravice</h1><p>Kdo ima kje katero vlogo, in kako to spremenim?</p></div></div>
   {!loaded ? (error ? <>{alert}<button type="button" className="secondary" onClick={start}>Poskusi znova</button></> : <p role="status" className="loading-state">Nalagam podatke …</p>) : <>
-   {notice && <p role="status" className="notice">{notice}</p>}
    {!drawerOpen() && alert}
-   <div className="tabs" role="tablist" aria-label="Pogledi" onKeyDown={keys}>
-    {tabs.map(([id, label]) => <button key={id} id={`admin-tab-${id}`} type="button" role="tab" className="tab" aria-selected={tab === id} aria-controls="admin-panel" tabIndex={tab === id ? 0 : -1} onClick={() => { setTab(id); setNotice(''); }}>{label}{id === 'prosnje' && pending > 0 && <> <span className="count">({pending})</span></>}</button>)}
+   <div className="tabs" ref={tabsRef} role="tablist" aria-label="Pogledi" onKeyDown={keys}>
+    {tabs.map(([id, label]) => <button key={id} id={`admin-tab-${id}`} type="button" role="tab" className="tab" aria-selected={tab === id} aria-controls="admin-panel" tabIndex={tab === id ? 0 : -1} onClick={e => { setTab(id); e.currentTarget.scrollIntoView?.({ inline: 'center', block: 'nearest' }); }}>{label}{id === 'prosnje' && pending > 0 && <> <span className="count">({pending})</span></>}</button>)}
    </div>
    <div id="admin-panel" role="tabpanel" aria-labelledby={`admin-tab-${tab}`} className="admin-section">
     {tab === 'podjetja' && <CompanyRoles companies={companies} users={users} roles={roles} selected={company} busy={busy} error={alert} onSelect={setCompany} onChange={change} onAssign={assign} onClearError={() => setError('')}/>}

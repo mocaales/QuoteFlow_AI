@@ -74,13 +74,13 @@ export default function WorkspacePage({ client, session }: { client: SupabaseCli
   <header className="mobile-bar"><IconButton icon={menu ? 'close' : 'menu'} label="Meni" tip={menu ? 'Zapri meni' : 'Odpri meni'} className="tip-right" aria-expanded={menu} aria-controls="app-menu" onClick={() => setMenu(!menu)}/><Brand/></header>
   <aside className="app-sidebar" id="app-menu"><Brand/>
    {!!ownCompanies.length && <label className="company-select">Aktivno podjetje<select value={companyId} disabled={busy} onChange={e => { setCompanyId(e.target.value); go('overview'); }}>{ownCompanies.map(c => <option key={c.id} value={c.id}>{c.naziv}</option>)}</select></label>}
-   <nav aria-label="Glavna navigacija">{item('overview', 'grid', 'Pregled')}{customer && item('moji', 'list', 'Moji projekti')}{item('prosnja', 'user-plus', 'Prošnja za mojstra')}
-    {supplier && <><p className="nav-label nav-group">Podatki podjetja</p>{item('cenik', 'list', 'Cenik')}{item('vrste-dela', 'list', 'Vrste dela')}{item('zaloge', 'stock', 'Zaloge')}{item('materiali', 'list', 'Materiali')}<p className="nav-label nav-group">Delo</p>{item('projekti', 'calendar', 'Projekti')}{item('delavci', 'users', 'Delavci')}</>}
-    {admin && <><p className="nav-label nav-group">Upravljanje</p>{item('admin', 'users', 'Podjetja in pravice')}</>}
+   <nav aria-label="Glavna navigacija">{item('overview', 'grid', 'Pregled')}{customer && item('moji', 'folder', 'Moji projekti')}{item('prosnja', 'user-plus', 'Prošnja za mojstra')}
+    {supplier && <><p className="nav-label nav-group">Podatki podjetja</p>{item('cenik', 'tag', 'Cenik')}{item('vrste-dela', 'wrench', 'Vrste dela')}{item('zaloge', 'stock', 'Zaloge')}{item('materiali', 'layers', 'Materiali')}<p className="nav-label nav-group">Delo</p>{item('projekti', 'calendar', 'Projekti')}{item('delavci', 'users', 'Delavci')}</>}
+    {admin && <><p className="nav-label nav-group">Upravljanje</p>{item('admin', 'rules', 'Podjetja in pravice')}</>}
    </nav>
    <div className="sidebar-bottom"><a className="sidebar-link" href="/demo"><Icon name="calculator"/>Demo kalkulator</a>
     <button className="sidebar-link" disabled={busy} onClick={() => void load()}><Icon name="refresh"/>Osveži pravice</button>
-    <div className="account"><span className="avatar" aria-hidden="true">{(session.user.email ?? 'U').slice(0,1).toUpperCase()}</span><div><strong>Moj račun</strong><span>{session.user.email}</span></div><IconButton icon="logout" label="Odjava" onClick={async () => { const { error } = await client.auth.signOut(); if (error) setError('Odjava ni uspela. Poskusite znova.'); }}/></div>
+    <div className="account"><span className="avatar" aria-hidden="true">{(session.user.email ?? 'U').slice(0,1).toUpperCase()}</span><div><strong>Moj račun</strong><span title={session.user.email}>{session.user.email}</span></div><IconButton icon="logout" label="Odjava" onClick={async () => { const { error } = await client.auth.signOut(); if (error) setError('Odjava ni uspela. Poskusite znova.'); }}/></div>
    </div>
   </aside>
   <main className="app-main"><div className="sheet">{error && <p role="alert" className="alert">{error}</p>}{!profile && !error && <p role="status" className="loading-state">Preverjam dostop …</p>}

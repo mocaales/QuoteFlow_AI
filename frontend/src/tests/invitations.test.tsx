@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
+import { render, expectToast } from './render';
 import userEvent from '@testing-library/user-event';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
 import WorkspacePage from '../pages/WorkspacePage';
@@ -30,7 +31,7 @@ describe('Povabila v podjetja (Pregled)',()=>{
  it('sprejem pošlje sprejmi true in osveži pravice',async()=>{
   await show();await userEvent.click(screen.getByRole('button',{name:'Sprejmi povabilo podjetja Gradnje d.o.o.'}));
   await waitFor(()=>expect(mockedApi).toHaveBeenCalledWith(client,'/povabila/p1/odlocitev','POST',{sprejmi:true}));
-  await waitFor(()=>expect(profileCalls).toBeGreaterThan(1));expect((await screen.findByRole('status')).textContent).toContain('sprejeto');expect(screen.queryByText(/vas vabi/)).toBeNull();
+  await waitFor(()=>expect(profileCalls).toBeGreaterThan(1));await expectToast('sprejeto');expect(screen.queryByText(/vas vabi/)).toBeNull();
  });
  it('zavrnitev najprej vpraša in šele nato pošlje sprejmi false',async()=>{
   await show();await userEvent.click(screen.getByRole('button',{name:'Zavrni povabilo podjetja Gradnje d.o.o.'}));

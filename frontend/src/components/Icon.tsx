@@ -1,4 +1,4 @@
-export type IconName = 'grid' | 'list' | 'stock' | 'rules' | 'users' | 'arrow' | 'plus' | 'search' | 'close' | 'logout' | 'check' | 'menu' | 'refresh' | 'calculator' | 'pen' | 'revoke' | 'restore' | 'trash' | 'user-plus' | 'calendar' | 'ruler' | 'lock';
+export type IconName = 'grid' | 'list' | 'stock' | 'rules' | 'users' | 'arrow' | 'plus' | 'search' | 'close' | 'logout' | 'check' | 'menu' | 'refresh' | 'calculator' | 'pen' | 'revoke' | 'restore' | 'trash' | 'user-plus' | 'calendar' | 'ruler' | 'lock' | 'more' | 'chevron-down' | 'chevron-left' | 'info' | 'alert' | 'check-circle' | 'tag' | 'wrench' | 'layers' | 'folder' | 'file-text';
 type Name = IconName;
 const paths: Record<Name, string> = {
  grid: 'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',
@@ -20,6 +20,16 @@ const paths: Record<Name, string> = {
  ruler: 'M3 17 17 3l4 4L7 21z M7 13l2 2 M10 10l2 2 M13 7l2 2',
  lock: 'M5 11h14v10H5z M8 11V8a4 4 0 0 1 8 0v3 M12 15v2',
  calculator: 'M6 3h12v18H6z M9 7h6 M9 12h.01 M12 12h.01 M15 12h.01 M9 16h.01 M12 16h.01 M15 16h.01',
+ more: 'M5 12a1 1 0 1 0 2 0 1 1 0 1 0-2 0 M11 12a1 1 0 1 0 2 0 1 1 0 1 0-2 0 M17 12a1 1 0 1 0 2 0 1 1 0 1 0-2 0',
+ 'chevron-down': 'm6 9 6 6 6-6', 'chevron-left': 'm15 6-6 6 6 6',
+ info: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z M12 11v5 M12 8h.01',
+ alert: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z M12 7.5v5 M12 16h.01',
+ 'check-circle': 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z M8 12l3 3 5-6',
+ tag: 'M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z M7.5 7.5h.01',
+ wrench: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76Z',
+ layers: 'M12 3 21 8 12 13 3 8Z M3 12.5 12 17.5 21 12.5 M3 17 12 22 21 17',
+ folder: 'M3 6a2 2 0 0 1 2-2h4l2 3h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z',
+ 'file-text': 'M6 3h8l5 5v13H6z M14 3v5h5 M9 13h6 M9 17h6',
 };
 export default function Icon({ name }: { name: Name }) {
  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={paths[name]}/></svg>;

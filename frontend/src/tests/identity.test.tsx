@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
+import { render, expectToast } from './render';
 import userEvent from '@testing-library/user-event';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
 import Login from '../features/identity/components/Login';
@@ -32,7 +33,7 @@ describe('US-01 prijava in registracija', () => {
   render(<Login client={client}/>);
   await userEvent.click(screen.getByRole('button', { name: /Nimate računa/ }));
   const user = await fillLogin(); await user.click(screen.getByRole('button', { name: 'Registriraj se' }));
-  expect((await screen.findByRole('status')).textContent).toContain('Preverite e-pošto');
+  await expectToast('Preverite e-pošto');
   expect(signUp).toHaveBeenCalledOnce();
   expect((screen.getByLabelText('Geslo') as HTMLInputElement).value).toBe('');
  });

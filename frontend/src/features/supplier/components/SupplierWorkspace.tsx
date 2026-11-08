@@ -10,6 +10,8 @@ import CatalogForm from './CatalogForm';
 import MaterialForm from './MaterialForm';
 import StockForm from './StockForm';
 import WorkTypes from './WorkTypes';
+import useTabsOverflow from '../../../utils/tabsOverflow';
+import { useToast } from '../../../lib/toast';
 
 type Editor = { type: 'catalog'; item: CatalogItem | null } | { type: 'material'; item: Material | null } | { type: 'stock'; item: Material; stock?: Stock } | { type: 'kind' };
 export default function SupplierWorkspace({ client, companyId, tab, onTab }: { client: SupabaseClient; companyId: string; tab: SupplierTab; onTab?: (tab: SupplierTab) => void }) {
@@ -20,7 +22,7 @@ export default function SupplierWorkspace({ client, companyId, tab, onTab }: { c
  const [loading, setLoading] = useState(true);
  const [busy, setBusy] = useState(false);
  const [error, setError] = useState('');
- const [notice, setNotice] = useState('');
+ const toast = useToast(), tabsRef = useTabsOverflow();
  const [search, setSearch] = useState('');
  const [filter, setFilter] = useState('vse');
  const [editor, setEditor] = useState<Editor | null>(null);
@@ -33,10 +35,10 @@ export default function SupplierWorkspace({ client, companyId, tab, onTab }: { c
   } finally { if (request === sequence.current) setLoading(false); }
  }, [client, companyId]);
  useEffect(() => { void load().catch(e => setError(e instanceof Error ? e.message : 'Podatki niso na voljo.')); return () => { sequence.current++; }; }, [load]);
- useEffect(() => { setSearch(''); setFilter('vse'); setEditor(null); setError(''); setNotice(''); }, [tab]);
+ useEffect(() => { setSearch(''); setFilter('vse'); setEditor(null); setError(''); }, [tab]);
  async function mutate(action: () => Promise<unknown>, message: string) {
-  setBusy(true); setError(''); setNotice('');
-  try { await action(); await load(); setEditor(null); setNotice(message); }
+  setBusy(true); setError('');
+  try { await action(); await load(); setEditor(null); toast(message); }
   catch (e) { setError(e instanceof Error ? e.message : 'Spremembe ni mogoče shraniti.'); }
   finally { setBusy(false); }
  }
@@ -44,15 +46,14 @@ export default function SupplierWorkspace({ client, companyId, tab, onTab }: { c
  const match = (naziv: string) => naziv.toLocaleLowerCase('sl').includes(search.toLocaleLowerCase('sl'));
  const catalog = items.filter(item => match(item.naziv) && (filter === 'vse' || (filter === 'aktivne' ? item.aktivna : !item.aktivna)));
  const stock = materials.filter(item => match(`${item.naziv} ${item.sifra}`) && (filter === 'vse' || (filter === 'aktivne' ? item.aktiven : !item.aktiven)));
- function open(next: Editor) { setError(''); setNotice(''); setEditor(next); }
+ function open(next: Editor) { setError(''); setEditor(next); }
  return <section className="supplier-view" aria-busy={loading}>
   <div className="page-title"><div><h1>{title}</h1><p>{tab === 'cenik' ? 'Postavke dela in storitev za pripravo ponudb.' : tab === 'vrste-dela' ? 'Vrste dela določajo urno postavko, ure in delavce ter interne materiale.' : tab === 'materiali' ? 'Materiali, njihove vrste, šifre in cene.' : 'Količine materialov po lokacijah.'}</p></div><div className="title-actions">
    {tab === 'materiali' && <button className="secondary" disabled={loading || busy} onClick={() => open({ type: 'kind' })}><Icon name="plus"/>Nova vrsta</button>}
    {tab !== 'zaloge' && tab !== 'vrste-dela' && <button disabled={loading || busy || (tab === 'materiali' && !kinds.length)} onClick={() => open(tab === 'cenik' ? { type: 'catalog', item: null } : { type: 'material', item: null })}><Icon name="plus"/>{tab === 'cenik' ? 'Nova postavka' : 'Nov material'}</button>}
   </div></div>
   {error && !editor && <p role="alert" className="alert">{error}<IconButton icon="refresh" label="Poskusi znova" className="on-alert" onClick={() => { setError(''); void load().catch(e => setError(e.message)); }}/></p>}
-  {notice && <p role="status" className="notice"><Icon name="check"/>{notice}</p>}
-  {onTab && (tab === 'cenik' || tab === 'vrste-dela') && <div className="tabs" role="tablist" aria-label="Področje cenika">{([['cenik', 'Storitve'], ['vrste-dela', 'Vrste dela']] as const).map(([id, label]) => <button key={id} role="tab" className="tab" aria-selected={tab === id} onClick={() => onTab(id)}>{label}</button>)}</div>}
+  {onTab && (tab === 'cenik' || tab === 'vrste-dela') && <div className="tabs" ref={tabsRef} role="tablist" aria-label="Področje cenika">{([['cenik', 'Storitve'], ['vrste-dela', 'Vrste dela']] as const).map(([id, label]) => <button key={id} role="tab" className="tab" aria-selected={tab === id} onClick={e => { e.currentTarget.scrollIntoView?.({ inline: 'center', block: 'nearest' }); onTab(id); }}>{label}</button>)}</div>}
   {loading ? <div className="loading-state" role="status">Nalagam podatke podjetja …</div> : tab === 'vrste-dela' ? <WorkTypes client={client} companyId={companyId} workTypes={trades} materials={materials} failed={!!error} busy={busy} onChange={load}/> : <>
    <div className="tabs" role="tablist" aria-label="Stanje postavk">{[['vse','Vse'],['aktivne','Aktivne'],['neaktivne','Neaktivne']].map(([id,label]) => <button key={id} role="tab" className="tab" aria-selected={filter === id} onClick={() => setFilter(id)}>{label}</button>)}</div>
    <div className="data-toolbar"><label className="search-field"><Icon name="search"/><span className="sr-only">Išči po nazivu</span><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Išči po nazivu …"/></label><span className="result-count">{tab === 'cenik' ? catalog.length : stock.length} postavk</span></div>

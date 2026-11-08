@@ -1,10 +1,12 @@
 import { useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import Brand from '../../../components/Brand';
+import { useToast } from '../../../lib/toast';
 
 export default function Login({ client }: { client: SupabaseClient }) {
  const [register, setRegister] = useState(false);
  const [error, setError] = useState('');
+ const toast = useToast();
  const [notice, setNotice] = useState('');
  const [busy, setBusy] = useState(false);
  async function submit(e: FormEvent<HTMLFormElement>) {
@@ -19,7 +21,7 @@ export default function Login({ client }: { client: SupabaseClient }) {
     throw new Error(code === 'email_not_confirmed' ? 'Najprej potrdite e-poštni naslov.' : code === 'invalid_credentials' ? 'E-pošta ali geslo ni pravilno.' : code === 'weak_password' ? 'Uporabite močnejše geslo z najmanj osmimi znaki.' : 'Zahteve ni mogoče dokončati. Preverite podatke ali poskusite pozneje.');
    }
    form.reset();
-   if (register && !result.data.session) setNotice('Preverite e-pošto za potrditev računa. Če račun že obstaja, se prijavite.');
+   if (register && !result.data.session) { const m = 'Preverite e-pošto za potrditev računa. Če račun že obstaja, se prijavite.'; setNotice(m); toast(m); };
   } catch (e) { setError(e instanceof Error ? e.message : 'Prijava trenutno ni dosegljiva.'); }
   finally { setBusy(false); }
  }
@@ -29,10 +31,10 @@ export default function Login({ client }: { client: SupabaseClient }) {
    <form onSubmit={submit}><label>E-pošta<input name="email" type="email" autoComplete="email" maxLength={254} required/></label>
     <label>Geslo<input name="password" type="password" minLength={8} maxLength={128} autoComplete={register ? 'new-password' : 'current-password'} required/></label>
     {register && <p className="muted">Geslo naj vsebuje najmanj osem znakov.</p>}
-    {error && <p role="alert" className="alert">{error}</p>}{notice && <p role="status" className="notice">{notice}</p>}
+    {error && <p role="alert" className="alert">{error}</p>}{notice && <p className="form-note">{notice}</p>}
     <button disabled={busy}>{busy ? 'Počakajte …' : register ? 'Registriraj se' : 'Prijavi se'}</button>
    </form>
-   <button className="text-button" disabled={busy} onClick={() => { setRegister(!register); setError(''); setNotice(''); }}>{register ? 'Že imate račun? Prijavite se' : 'Nimate računa? Registrirajte se'}</button>
+   <button className="text-button link-action" disabled={busy} onClick={() => { setRegister(!register); setError(''); setNotice(''); }}>{register ? 'Že imate račun? Prijavite se' : 'Nimate računa? Registrirajte se'}</button>
   </section><p className="auth-intro">Projekti, ponudbe in sodelovanje med strankami in mojstri.</p><a className="demo-link" href="/demo">Odpri demonstracijski kalkulator →</a>
  </div>;
 }
