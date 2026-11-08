@@ -2,12 +2,6 @@
 
 Večpodjetniška spletna aplikacija za vodenje projektov, ekip, cenika, materialov, ponudb in računov. Uporabnik lahko nastopa kot stranka ter kot mojster ali delavec pri različnih podjetjih.
 
-**Izvedeno:** nova relacijska shema je uvedena v Supabase. Delujejo registracija/prijava, nove vloge, administratorsko upravljanje uporabnikov in podjetij z lastnikom, prošnja za mojstra z administratorsko odločitvijo (odobritev ustvari podjetje, lastništvo in vlogo mojster) cenik storitev z vrstami dela in neobveznimi materiali (US-02), materiali in zaloga po lokacijah ter začetek projekta: mojster odpre projekt za stranko z natančnim e-poštnim naslovom, ga ureja in zahteva ogled, stranka vidi svoje projekte (US-03). Izvedeni so tudi ponudbe (osnutek, postavke iz cenika, različice, pošiljanje; US-04), odločitev stranke (US-05), termin in zaključek izvedbe (US-06) ter izdaja računa in evidenca plačila (US-07), torej celoten MVP F1–F7. **Uvedeno v oddaljeni Supabase 2026-11-08:** model v3 z 22 tabelami, torej vrste dela, postavke projekta z izmerami (m, m², m³, kos; seštevanje in odštevanje) in izračun s ceno dela ([zapis](docs/razvoj/model-v3-postavke-izmere.md)), ter US-08: mojster delavce povabi z e-poštnim naslovom (povabilo sprejme ali zavrne delavec v svojem računu, poteče po 14 dneh), prekliče povabila ter odvzame in ponovno aktivira delavce, admin išče vloge po podjetjih in uporabnikih ([zapis](docs/razvoj/admin-in-delavci-us-08.md)).
-
-**Naslednji razvoj (načrtovano):** ekipe in funkcionalnosti F9–F27 (F8 je izvedena). API in vmesnik za ekipe še nista uvedena. Migraciji za sestavo in projekte sta uvedeni v Supabase 5. 11. 2026; migracije `20261106100000` do `20261107221442` (model v3, ponudbe, izvedba, računi, delavci in povabila, indeksi, utrditve po varnostnem pregledu) (11 migracij) so 2026-11-08 z odobritvijo uporabnika uvedene v oddaljeni Supabase (`supabase db push --db-url`, po pregledu in poskusnem zagonu); `/api/ready` vrne `ok`. [Stanje razvoja](docs/razvoj/podatkovni-model.md).
-
-**Načrtovani obseg:** [22 funkcionalnosti, od tega 7 MVP, in 5 možnih nadgradenj](docs/02-funkcionalnosti-in-obseg.md). AI-pomoč pri analizi projekta, pripravi in pregledu osnutkov ter povzetkih je načrtovana po MVP (F16–F20) in še ni izvedena.
-
 **Tehnologije:** React, TypeScript, Vite · Python, FastAPI · Supabase PostgreSQL in Supabase Auth.
 
 ## Zagon z Dockerjem
