@@ -8,6 +8,7 @@ import { api } from '../services/api';
 vi.mock('../services/api', async importOriginal => ({ ...await importOriginal<typeof import('../services/api')>(), api: vi.fn() }));
 const mockedApi=vi.mocked(api);
 const client={} as SupabaseClient;
+const pickMenu=async(proj:string,item:string)=>{await userEvent.click(await screen.findByRole('button',{name:`Več dejanj ${proj}`}));await userEvent.click(await screen.findByRole('menuitem',{name:item}))};
 const P='/podjetja/a/projekti/p1/postavke';
 const money=(re:string)=>new RegExp(re.replace('.','\\.')+'\\s?€');
 // Primer iz G1: izmere 5x4 m2 + 2x1 m2 - 1x2 m2 = 20 m2; 20 x 1 x 10 EUR + 25 EUR x 8 h x 2 delavca = 600; popust 10 % -> 540,00; DDV 118,80; skupaj 658,80.
@@ -176,7 +177,7 @@ describe('Postavke projekta v delovnem prostoru mojstra',()=>{
    :path===P?data:path==='/podjetja/a/vrste-dela'?trades:[]);
   render(<WorkspacePage client={client} session={session}/>);
   await userEvent.click(await within(await screen.findByRole('navigation',{name:'Glavna navigacija'})).findByRole('button',{name:'Projekti'}));
-  await userEvent.click(await screen.findByRole('button',{name:'Postavke Obnova kopalnice'}));
+  await pickMenu('Obnova kopalnice','Postavke');
   expect(await screen.findByText('Polaganje keramike')).toBeTruthy();expect(mockedApi).toHaveBeenCalledWith(client,P);
  });
 });

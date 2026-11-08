@@ -1,5 +1,6 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { companies, mockApi, quoteFull, signIn, type Mock } from './fixtures';
+import { rowAction } from './layout';
 
 // G5 acceptance for US-04..US-07 in model v3: postavke in izmere na projektu, ponudba = predogled in pošiljanje, error paths, double submit, immutability, tenant switch, refocus, layout.
 // Overrides are registered after mockApi, so they win; unmatched requests fall back to the shared mock.
@@ -19,10 +20,10 @@ async function goto(page: Page, screen: 'Projekti' | 'Moji projekti') {
  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
 }
 async function boot(page: Page, options: Mock = {}) { await mockApi(page, options); await signIn(page); }
-async function masterQuote(page: Page, options: Mock = {}) { await boot(page, options); await goto(page, 'Projekti'); await page.getByRole('button', { name: 'Ponudba Obnova kopalnice' }).click(); await expect(page.getByRole('heading', { name: /P-2026-001/ })).toBeVisible(); }
+async function masterQuote(page: Page, options: Mock = {}) { await boot(page, options); await goto(page, 'Projekti'); await rowAction(page, 'Obnova kopalnice', 'Ponudba'); await expect(page.getByRole('heading', { name: /P-2026-001/ })).toBeVisible(); }
 async function customerQuote(page: Page, options: Mock = {}) { await boot(page, { customerQuote: 'poslana', ...options }); await goto(page, 'Moji projekti'); await page.getByRole('button', { name: 'Ponudba Menjava oken' }).click(); await expect(page.getByRole('heading', { name: /P-2026-001/ })).toBeVisible(); }
-async function progress(page: Page, options: Mock) { await boot(page, options); await goto(page, 'Projekti'); await page.getByRole('button', { name: 'Izvedba Nov estrih' }).click(); await expect(page.getByRole('heading', { level: 1, name: 'Nov estrih' })).toBeVisible(); }
-async function itemsScreen(page: Page, options: Mock = {}) { await boot(page, options); await goto(page, 'Projekti'); await page.getByRole('button', { name: 'Postavke Obnova kopalnice' }).click(); await expect(page.getByRole('heading', { level: 1, name: 'Obnova kopalnice' })).toBeVisible(); }
+async function progress(page: Page, options: Mock) { await boot(page, options); await goto(page, 'Projekti'); await rowAction(page, 'Nov estrih', 'Izvedba'); await expect(page.getByRole('heading', { level: 1, name: 'Nov estrih' })).toBeVisible(); }
+async function itemsScreen(page: Page, options: Mock = {}) { await boot(page, options); await goto(page, 'Projekti'); await rowAction(page, 'Obnova kopalnice', 'Postavke'); await expect(page.getByRole('heading', { level: 1, name: 'Obnova kopalnice' })).toBeVisible(); }
 async function fillItem(page: Page) {
  const dialog = page.getByRole('dialog');
  for (const [label, value] of [['Naziv', 'Beljenje'], ['Opis', 'Dve plasti'], ['Cena na enoto', '10'], ['Količina', '3'], ['Stopnja DDV (%)', '22']]) await dialog.getByLabel(label).fill(value);
@@ -30,7 +31,7 @@ async function fillItem(page: Page) {
  return dialog;
 }
 const postPostavke = (page: Page, handler: (route: Route) => unknown) => page.route('**/api/podjetja/*/projekti/*/postavke', route => route.request().method() === 'POST' ? handler(route) : route.fallback());
-async function invoicePanel(page: Page, options: Mock) { await boot(page, options); await goto(page, 'Projekti'); await page.getByRole('button', { name: 'Račun Nov estrih' }).click(); await expect(page.getByRole('heading', { level: 1, name: 'Nov estrih' })).toBeVisible(); }
+async function invoicePanel(page: Page, options: Mock) { await boot(page, options); await goto(page, 'Projekti'); await rowAction(page, 'Nov estrih', 'Račun'); await expect(page.getByRole('heading', { level: 1, name: 'Nov estrih' })).toBeVisible(); }
 const noSideways = (page: Page) => expect(page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).resolves.toBe(true);
 function counter(page: Page, pattern: RegExp, method = 'POST') { const hits: string[] = []; page.on('request', r => { if (r.method() === method && pattern.test(new URL(r.url()).pathname)) hits.push(r.url()); }); return hits; }
 
@@ -76,14 +77,14 @@ test.describe('Napake strežnika pri pošiljanju ponudbe', () => {
  for (const status of [403, 404, 503]) test(`nalaganje postavk projekta vrne ${status}: opozorilo, ne prazno stanje 'Projekt še nima postavk.'`, async ({ page }) => {
   await boot(page); await goto(page, 'Projekti');
   await page.route('**/api/podjetja/*/projekti/*/postavke', route => json(route, { detail: status === 403 ? 'Za to dejanje nimate pravice.' : status === 404 ? 'Zapis ni na voljo.' : 'Podatkovna baza trenutno ni na voljo.' }, status));
-  await page.getByRole('button', { name: 'Postavke Obnova kopalnice' }).click();
+  await rowAction(page, 'Obnova kopalnice', 'Postavke');
   await expect(page.getByRole('alert')).toBeVisible();
   await expect(page.getByText('Projekt še nima postavk.')).toHaveCount(0);
  });
  for (const status of [403, 404]) test(`nalaganje ponudb vrne ${status}: opozorilo, ne prazno stanje 'brez ponudbe'`, async ({ page }) => {
   await boot(page); await goto(page, 'Projekti');
   await page.route('**/api/podjetja/*/projekti/*/ponudbe', route => json(route, { detail: status === 403 ? 'Za to dejanje nimate pravice.' : 'Zapis ni na voljo.' }, status));
-  await page.getByRole('button', { name: 'Ponudba Obnova kopalnice' }).click();
+  await rowAction(page, 'Obnova kopalnice', 'Ponudba');
   await expect(page.getByRole('alert')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Ustvari osnutek ponudbe' })).toHaveCount(0);
  });
@@ -248,7 +249,7 @@ test.describe('Nespremenljivost in vidnost', () => {
   const rejected = { ...quoteFull('poslana'), stanje: 'zavrnjena', odgovorjeno_ob: '2026-11-07T10:00:00Z' }, { postavke, ddv_po_stopnjah, ...summary } = rejected;
   await page.route('**/api/podjetja/*/projekti/*/ponudbe', route => json(route, [summary]));
   await page.route('**/api/podjetja/*/projekti/*/ponudbe/q1', route => json(route, rejected));
-  await goto(page, 'Projekti'); await page.getByRole('button', { name: 'Ponudba Obnova kopalnice' }).click();
+  await goto(page, 'Projekti'); await rowAction(page, 'Obnova kopalnice', 'Ponudba');
   await expect(page.getByText('Zavrnjena').first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'Pripravi novo različico' })).toBeVisible();
   for (const name of [/^Dodaj iz cenika/, /^Ročni vnos/, /^Pošlji stranki/, /^Uredi /, /^Odstrani /]) await expect(page.getByRole('button', { name })).toHaveCount(0);
@@ -292,8 +293,10 @@ test.describe('Nespremenljivost in vidnost', () => {
  });
  test('termin pred sprejemom: obrazca za termin ni, izvedba ni zaključena', async ({ page }) => {
   await boot(page); await goto(page, 'Projekti');
-  await expect(page.getByRole('button', { name: 'Izvedba Obnova kopalnice' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Račun Obnova kopalnice' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Več dejanj Obnova kopalnice' }).click();
+  await expect(page.getByRole('menuitem', { name: 'Izvedba', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('menuitem', { name: 'Račun', exact: true })).toHaveCount(0);
+  await page.keyboard.press('Escape');
  });
  test('vnos termina ne označi dela kot opravljenega: po potrditvi je gumb Zaključi izvedbo še vedno na voljo', async ({ page }) => {
   await progress(page, { progress: 'izvedba' });
@@ -311,7 +314,7 @@ test.describe('Podjetje in fokus', () => {
   await page.route(`**/api/podjetja/${B}/projekti`, async route => { await wait(400); await json(route, []); });
   await page.route(`**/api/podjetja/${B}/cenik`, route => json(route, []));
   await goto(page, 'Projekti');
-  await page.getByRole('button', { name: 'Ponudba Obnova kopalnice' }).click();
+  await rowAction(page, 'Obnova kopalnice', 'Ponudba');
   await expect(page.getByRole('heading', { name: /P-2026-001/ })).toBeVisible();
   if (phone(page)) await page.getByRole('button', { name: 'Meni' }).click();
   await page.getByLabel('Aktivno podjetje').selectOption(B);

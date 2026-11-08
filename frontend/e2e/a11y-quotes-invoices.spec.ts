@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { customerQuote, mockApi, quoteFull, signIn, type Mock } from './fixtures';
+import { rowAction } from './layout';
 
 // WCAG 2.2 AA audit of US-04..US-07 (project items and izmere, quote preview and send, customer decision, execution, invoices) with explicit assertions (model v3).
 // Tests tagged [A11Y-nn] pin a real finding and FAIL until the owner fixes it; unmarked tests document checks that pass.
@@ -36,7 +37,7 @@ async function open(page: Page, screen: Screen) {
 }
 async function masterQuote(page: Page, quote: Mock['quote'] = 'osnutek') {
  await mockApi(page, { quote }); await signIn(page); await open(page, 'projekti');
- await page.getByRole('button', { name: 'Ponudba Obnova kopalnice' }).click();
+ await rowAction(page, 'Obnova kopalnice', 'Ponudba');
  await expect(page.getByRole('heading', { name: /P-2026-001/ })).toBeVisible();
 }
 async function customer(page: Page) {
@@ -46,12 +47,12 @@ async function customer(page: Page) {
 }
 async function progress(page: Page, state: 'termin' | 'izvedba') {
  await mockApi(page, { progress: state }); await signIn(page); await open(page, 'projekti');
- await page.getByRole('button', { name: 'Izvedba Nov estrih' }).click();
+ await rowAction(page, 'Nov estrih', 'Izvedba');
  await expect(page.getByRole('heading', { level: 1, name: 'Nov estrih' })).toBeVisible();
 }
 async function invoicePanel(page: Page, invoice: NonNullable<Mock['invoice']>) {
  await mockApi(page, { invoice }); await signIn(page); await open(page, 'projekti');
- await page.getByRole('button', { name: 'Račun Nov estrih' }).click();
+ await rowAction(page, 'Nov estrih', 'Račun');
  await expect(page.getByRole('heading', { level: 1, name: 'Nov estrih' })).toBeVisible();
 }
 async function customerInvoice(page: Page) {
@@ -62,7 +63,7 @@ async function customerInvoice(page: Page) {
 
 async function itemsScreen(page: Page) {
  await mockApi(page, {}); await signIn(page); await open(page, 'projekti');
- await page.getByRole('button', { name: 'Postavke Obnova kopalnice' }).click();
+ await rowAction(page, 'Obnova kopalnice', 'Postavke');
  await expect(page.getByRole('heading', { level: 1, name: 'Obnova kopalnice' })).toBeVisible();
  // The openers stay disabled while the items load; focus() on a disabled button is a silent no-op, so wait until they are usable.
  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
@@ -441,8 +442,9 @@ test('[A11Y-07b] pošiljanje ponudbe zahteva potrditev (3.3.4)', async ({ page }
 
 test('[A11Y-08] odpiranje in vrnitev iz podrobnosti ne izgubita fokusa (2.4.3)', async ({ page }) => {
  await mockApi(page, {}); await signIn(page); await open(page, 'projekti');
- const opener = page.getByRole('button', { name: 'Izvedba Nov estrih' });
+ const opener = page.getByRole('button', { name: 'Več dejanj Nov estrih' });
  await opener.focus(); await page.keyboard.press('Enter');
+ const item = page.getByRole('menuitem', { name: 'Izvedba', exact: true }); await expect(item).toBeFocused().catch(() => item.focus()); await page.keyboard.press('Enter');
  await expect(page.getByRole('heading', { level: 1, name: 'Nov estrih' })).toBeVisible();
  expect(await page.evaluate(() => document.activeElement === document.body), 'focus after opening the detail').toBe(false);
  await page.getByRole('button', { name: 'Nazaj na projekte' }).focus(); await page.keyboard.press('Enter');
@@ -509,7 +511,7 @@ test('status računa in ponudbe nosi besedilo, ne le barve', async ({ page }) =>
 
 test('[A11Y-12] namig ikone je mogoče skriti z Escape (1.4.13)', async ({ page }) => {
  await mockApi(page, {}); await signIn(page); await open(page, 'projekti');
- const button = page.getByRole('button', { name: 'Račun Nov estrih' });
+ const button = page.getByRole('button', { name: 'Več dejanj Nov estrih' });
  await page.getByRole('main').getByRole('heading', { level: 1 }).evaluate(el => { el.setAttribute('tabindex', '-1'); (el as HTMLElement).focus(); });
  for (let i = 0; i < 40 && !(await button.evaluate(el => el === document.activeElement)); i++) await page.keyboard.press('Tab');
  await expect(button).toBeFocused();

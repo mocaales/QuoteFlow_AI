@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
+import { render, expectToast } from './render';
 import userEvent from '@testing-library/user-event';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import CustomerQuote from '../features/quotes/components/CustomerQuote';
@@ -68,7 +69,7 @@ describe('Ponudba za stranko',()=>{
  });
  it('nadomeščena ponudba nima gumbov in opozori na novejšo različico',async()=>{
   list=[quote({nadomescena:true})];open();await screen.findByText('Rušenje estriha');
-  expect(screen.getAllByText(/nadomeščena/i).length).toBeGreaterThan(0);expect(decisions()).toEqual([null,null]);
+  await expectToast('Ta ponudba je nadomeščena z novejšo različico.');expect(decisions()).toEqual([null,null]);
  });
  it('ob več različicah je za odločanje odprta najnovejša',async()=>{
   list=[quote({nadomescena:true}),quote({id:'q2',razlicica:2,postavke:[line({naziv:'Nova postavka'})]})];open();

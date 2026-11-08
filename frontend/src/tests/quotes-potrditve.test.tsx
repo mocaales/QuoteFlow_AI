@@ -8,6 +8,7 @@ import { api } from '../services/api';
 vi.mock('../services/api', () => ({ api: vi.fn() }));
 const mockedApi=vi.mocked(api);
 const client={} as SupabaseClient;
+const pickMenu=async(proj:string,item:string)=>{await userEvent.click(await screen.findByRole('button',{name:`Več dejanj ${proj}`}));await userEvent.click(await screen.findByRole('menuitem',{name:item}))};
 const P='/podjetja/a/projekti/1/ponudbe';
 const line=(id:string,more={})=>({id,postavka_cenika_id:null,zaporedje:1,naziv:'Rušenje estriha',opis:'Odvoz',vrsta_dela:'Rušenje',enota:'m2',cena_na_enoto:'100.0000',kolicina:'2.0000',popust:'0.100000',stopnja_ddv:'0.220000',neto:'180.00',ddv:'39.60',koncna_cena:'219.60',materiali:[],...more});
 const summary={id:'q1',stevilka:'P-2026-001',razlicica:1,stanje:'osnutek',poslano_ob:null,odgovorjeno_ob:null,velja_do:'2026-12-01',nadomescena:false,neto:'180.00',ddv:'39.60',skupaj:'219.60'};
@@ -76,6 +77,6 @@ describe('Gumb Ponudba v delovnem prostoru',()=>{
  beforeEach(()=>{mockedApi.mockImplementation(async(_c,path)=>path==='/podjetja/a/projekti'?all:[]);});
  it.each(['termin','izvedba','obracun','zakljucen'])('v fazi %s je gumb Ponudba in odpre ponudbo',async faza=>{
   render(<ProjectsWorkspace client={client} companyId="a" renderQuote={p=><p>Ponudba projekta {p.naziv}</p>}/>);
-  await userEvent.click(await screen.findByRole('button',{name:`Ponudba Projekt ${faza}`}));expect(await screen.findByText(`Ponudba projekta Projekt ${faza}`)).toBeTruthy();expect(screen.getByRole('button',{name:'Nazaj na projekte'})).toBeTruthy();
+  await pickMenu(`Projekt ${faza}`,'Ponudba');expect(await screen.findByText(`Ponudba projekta Projekt ${faza}`)).toBeTruthy();expect(screen.getByRole('button',{name:'Nazaj na projekte'})).toBeTruthy();
  });
 });

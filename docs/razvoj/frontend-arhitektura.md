@@ -44,7 +44,9 @@ V mapi `frontend/` izvedite `npm test`, `npm run build` in `npm run test:e2e`. P
 
 ## Vizualni sistem
 
-Uokvirjen list: navigacija in ozadje sta en zelenkasto siv okvir, delo poteka na belem listu z 1 px robom in brez sence. Zelena barva blagovne znamke je omejena na znak, aktivni zavihek in stanja potrditve; glavno dejanje je skoraj črno. Pisava je IBM Plex Sans (Google Fonts) z velikostmi 12, 14, 16 in 22 px.
+Uokvirjen list v slogu Apple (2026-11-08): navigacija in ozadje sta svetlo siva podlaga (`#f5f5f7`), delo poteka na belem listu z zaobljenimi robovi (20 px) in mehko senco namesto robov. Zelena barva blagovne znamke je omejena na znak, izbrani zavihek, stanja potrditve in ikono obvestila; glavno dejanje je skoraj črno, gumbi so brez obrob. Pisava je sistemska (`-apple-system`, SF Pro, `system-ui`), brez zunanjih pisav. Žetoni (barve, polmeri, sence, prosojni material z zameglitvijo, vzmetno gibanje) so v `:root` v `app/style.css`.
+
+Uspešna dejanja pokažejo pojavno obvestilo (`components/Toaster.tsx`, `useToast()` iz `lib/toast.ts`): na namizju spodaj na sredini, na telefonu zgoraj pod menijsko vrstico kot sklad, izgine po 5 s (med lebdenjem ali fokusom počaka), največ tri. Napake ostanejo v vrstici ob dejanju (`role="alert"`). Vrstice projektov imajo vsa dejanja v meniju s tremi pikami (`components/ActionMenu.tsx`, `role=menu`, tipkovnica, obrne se ob robu zaslona).
 
 Pravila, ki jih preverja `e2e/design.spec.ts`:
 
@@ -52,8 +54,9 @@ Pravila, ki jih preverja `e2e/design.spec.ts`:
 - besedilo najmanj 12 px, brez razprtih velikih črk in s kontrastom vsaj 4,5 : 1;
 - številke, zneski in datumi v tabelah desno poravnani, s tabelaričnimi števkami;
 - svetla navigacija in nobenega vodoravnega drsenja strani;
-- kontrole najmanj 28 px na namizju in 40 px na telefonu.
+- kontrole najmanj 24 px na namizju in 44 px na telefonu, vnosna polja na telefonu 16 px;
+- vsak viden gumb in vnos je klikljiv v središču (ga nič ne prekriva), besedilo v gumbih, zavihkih in celicah ni odrezano (`e2e/layout.ts`).
 
-Tabele so glavni prikaz, urejanje poteka v modalnem stranskem panelu z upravljanjem fokusa. Seznami začnejo z ugotovitvijo, ki odgovori na vprašanje zaslona, na primer koliko postavk je potrjenih in na voljo za ponudbe. Stanja seznama so podčrtani zavihki s števili.
+Tabele so glavni prikaz, urejanje poteka v modalnem stranskem panelu z upravljanjem fokusa. Seznami začnejo z ugotovitvijo, ki odgovori na vprašanje zaslona, na primer koliko postavk je potrjenih in na voljo za ponudbe. Stanja seznama so segmentni zavihki; na telefonu se predolg niz zavihkov drsi z mehkim robom.
 
-Na telefonu se navigacija zloži v meni pod gumbom »Meni«, tabele s podatki ponudnika pa postanejo dvovrstične vrstice z vsemi polji. Prehodi panela in kontrol upoštevajo `prefers-reduced-motion`.
+Na telefonu se navigacija zloži v meni pod gumbom »Meni«, tabele s podatki ponudnika pa postanejo dvovrstične vrstice z vsemi polji; stranski panel postane spodnji list z ročico. Prehodi panela in kontrol upoštevajo `prefers-reduced-motion`.

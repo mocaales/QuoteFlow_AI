@@ -5,6 +5,7 @@ import { ApiError } from '../../../services/api';
 import { date, fold, plural } from '../../../utils/format';
 import { cancelInvitation, getInvitations, getWorkers, inviteWorker, setWorkerActive } from '../api';
 import type { Invitation, Worker } from '../types';
+import { useToast } from '../../../lib/toast';
 
 const generic = 'Povabila ni mogoče poslati. Preverite e-pošto in poskusite znova.';
 const states: Record<string, [string, string]> = { povabljen: ['Čaka', 'pending'], sprejeto: ['Sprejeto', 'confirmed'], zavrnjeno: ['Zavrnjeno', 'inactive'], preklicano: ['Preklicano', 'inactive'], poteklo: ['Poteklo', 'inactive'] };
@@ -16,7 +17,7 @@ export default function Workers({ client, companyId, companyName, userId }: { cl
  const [loaded, setLoaded] = useState(false);
  const [busy, setBusy] = useState(false);
  const [error, setError] = useState('');
- const [notice, setNotice] = useState('');
+ const toast = useToast();
  const [query, setQuery] = useState('');
  const [state, setState] = useState('aktivni');
  const [confirming, setConfirming] = useState<string | null>(null);
@@ -26,8 +27,8 @@ export default function Workers({ client, companyId, companyName, userId }: { cl
  useEffect(() => { start(); return () => { seq.current++; }; }, [start]);
  async function run(action: () => Promise<string>, fail: (e: unknown) => string) {
   if (pending.current) return false;
-  pending.current = true; setBusy(true); setError(''); setNotice('');
-  try { const message = await action(); await load(); setNotice(message); return true; }
+  pending.current = true; setBusy(true); setError('');
+  try { const message = await action(); await load(); toast(message); return true; }
   catch (e) { setError(fail(e)); return false; }
   finally { pending.current = false; setBusy(false); }
  }
@@ -42,7 +43,7 @@ export default function Workers({ client, companyId, companyName, userId }: { cl
  const shown = items.filter(w => (state === 'vsi' || w.aktivna === (state === 'aktivni')) && (!query || fold(`${fullName(w)} ${w.e_posta}`).includes(fold(query))));
  return <>
   <div className="page-title"><div><h1>Delavci</h1><p>{`Sodelavci podjetja ${companyName}`}</p></div></div>
-  {error && <p role="alert" className="alert">{error}</p>}{notice && <p role="status" className="notice">{notice}</p>}
+  {error && <p role="alert" className="alert">{error}</p>}
   <form className="inline-form" onSubmit={add}>
    <div className="field-stack"><label>E-pošta delavca<input name="e_posta" type="email" required minLength={3} maxLength={254} autoComplete="off" aria-describedby="delavec-pomoc"/></label>
     <p id="delavec-pomoc" className="muted">Delavec mora biti že registriran in imeti potrjeno e-pošto.</p></div>

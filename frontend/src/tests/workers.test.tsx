@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, screen, waitFor, within } from '@testing-library/react';
+import { render, expectToast } from './render';
 import userEvent from '@testing-library/user-event';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
 import Workers from '../features/workers/components/Workers';
@@ -59,7 +60,7 @@ describe('Delavci: seznam',()=>{
  });
  it('med nalaganjem pokaže stanje, ob napaki opozorilo in poskusi znova',async()=>{
   loadError=new Error('Podatkovna baza trenutno ni na voljo.');render(<Workers client={client} companyId="a" companyName="Gradnje d.o.o." userId="u1"/>);
-  expect(screen.getByRole('status').textContent).toContain('Nalagam delavce …');
+  expect(screen.getAllByRole('status').map(s=>s.textContent).join(' ')).toContain('Nalagam delavce …');
   expect((await screen.findByRole('alert')).textContent).toContain('Podatkovna baza trenutno ni na voljo.');expect(screen.queryByText('V podjetju še ni delavcev.')).toBeNull();
   loadError=null;await userEvent.click(screen.getByRole('button',{name:'Poskusi znova'}));expect(await screen.findByText('boris@mail.si')).toBeTruthy();
  });
@@ -70,7 +71,7 @@ describe('Delavci: povabila',()=>{
  it('pošlje samo e_posta na povabila, počisti polje in vedno pokaže isto sporočilo',async()=>{
   await open();await add('novi@mail.si');
   await waitFor(()=>expect(mockedApi).toHaveBeenCalledWith(client,L+'/povabila','POST',{e_posta:'novi@mail.si'}));
-  expect((await screen.findByRole('status')).textContent).toBe(sent);expect((screen.getByLabelText('E-pošta delavca') as HTMLInputElement).value).toBe('');
+  await expectToast(sent);expect((screen.getByLabelText('E-pošta delavca') as HTMLInputElement).value).toBe('');
   expect(await screen.findByRole('heading',{name:'Povabila'})).toBeTruthy();expect(screen.queryByText('Delavec je dodan.')).toBeNull();
   expect(writes().every(c=>c[1]!==L)).toBe(true);
  });
@@ -81,7 +82,7 @@ describe('Delavci: povabila',()=>{
   expect(t.getAllByRole('button',{name:/Prekliči povabilo/})).toHaveLength(1);
   await userEvent.click(t.getByRole('button',{name:'Prekliči povabilo za caka@mail.si'}));expect(writes()).toHaveLength(0);
   await userEvent.click(screen.getByRole('button',{name:'Prekliči povabilo'}));
-  await waitFor(()=>expect(mockedApi).toHaveBeenCalledWith(client,L+'/povabila/p1/preklic','POST'));expect((await screen.findByRole('status')).textContent).toContain('Povabilo je preklicano.');
+  await waitFor(()=>expect(mockedApi).toHaveBeenCalledWith(client,L+'/povabila/p1/preklic','POST'));await expectToast('Povabilo je preklicano.');
   await waitFor(()=>expect(within(screen.getByRole('table',{name:'Povabila delavcev'})).getAllByText('Preklicano')).toHaveLength(2));
  });
  it('napake ne razkrijejo strežnikovega besedila razen pravic in omejitve',async()=>{
@@ -117,11 +118,11 @@ describe('Delavci: odvzem in ponovna omogočitev',()=>{
  it('potrjen odvzem pošlje PATCH, osveži in sporoči uspeh',async()=>{
   await open();await userEvent.click(within(rowOf('boris@mail.si')).getByRole('button',{name:/Odvzemi dostop/}));await userEvent.click(screen.getByRole('button',{name:'Odvzemi dostop'}));
   await waitFor(()=>expect(mockedApi).toHaveBeenCalledWith(client,L+'/w1','PATCH',{aktivna:false}));
-  expect((await screen.findByRole('status')).textContent).toContain('Dostop delavca je odvzet.');await waitFor(()=>expect(screen.queryByText('boris@mail.si')).toBeNull());
+  await expectToast('Dostop delavca je odvzet.');await waitFor(()=>expect(screen.queryByText('boris@mail.si')).toBeNull());
  });
  it('ponovna omogočitev odvzetega delavca ne vpraša in pošlje aktivna true',async()=>{
   await open();await userEvent.selectOptions(screen.getByLabelText('Stanje'),'Odvzeti');await userEvent.click(screen.getByRole('button',{name:/Ponovno omogoči.*cene@mail\.si/}));
-  await waitFor(()=>expect(mockedApi).toHaveBeenCalledWith(client,L+'/w3','PATCH',{aktivna:true}));expect((await screen.findByRole('status')).textContent).toContain('Dostop delavca je ponovno omogočen.');
+  await waitFor(()=>expect(mockedApi).toHaveBeenCalledWith(client,L+'/w3','PATCH',{aktivna:true}));await expectToast('Dostop delavca je ponovno omogočen.');
  });
  it('napaka pri odvzemu ohrani vrstico in pokaže opozorilo',async()=>{
   await open();failure=new Error('Delavca ni več mogoče spremeniti.');

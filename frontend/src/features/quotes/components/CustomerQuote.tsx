@@ -6,6 +6,7 @@ import { dateTime, money, percent, quantity } from '../../../utils/format';
 import { decideQuote, getCustomerQuotes } from '../api';
 import { unitLabels } from '../../../utils/units';
 import { stateLabels, type CustomerQuote as Quote } from '../types';
+import { useToast } from '../../../lib/toast';
 
 export default function CustomerQuote({ client, projectId }: { client: SupabaseClient; projectId: string }) {
  const [quote, setQuote] = useState<Quote | null>(null);
@@ -37,6 +38,8 @@ export default function CustomerQuote({ client, projectId }: { client: SupabaseC
   finally { setBusy(false); }
  }
  const ask = (value: boolean) => { opener.current = value; setConfirming(value); };
+ const toast = useToast(), expiredNow = !!quote?.velja_do && quote.velja_do < new Date().toISOString().slice(0, 10), noteText = !quote ? '' : quote.nadomescena ? 'Ta ponudba je nadomeščena z novejšo različico.' : quote.stanje === 'poslana' && expiredNow ? 'Ponudba je potekla in nanjo ni več mogoče odgovoriti.' : '';
+ useEffect(() => { if (noteText) toast(noteText); }, [noteText, toast]);
  if (loading) return <div className="loading-state" role="status">Nalagam ponudbo …</div>;
  if (loadFailed) return <p role="alert" className="alert">{loadError}</p>;
  if (!quote) return <section className="panel"><h2>Ponudba</h2><p>Podjetje vam še ni poslalo ponudbe.</p></section>;
@@ -62,7 +65,7 @@ export default function CustomerQuote({ client, projectId }: { client: SupabaseC
   <div role="status" tabIndex={-1} ref={outcome} className="decision-outcome">{quote.stanje === 'sprejeta' ? <dl><div><dt>Ponudba je sprejeta</dt><dd>Projekt je v fazi termin. Mojster določi termin izvedbe, osnutek računa je pripravljen.</dd></div></dl> : quote.stanje === 'zavrnjena' ? <dl><div><dt>Ponudba je zavrnjena</dt><dd>Mojster lahko pripravi novo različico ponudbe.</dd></div></dl> : null}</div>
   {quote.stanje === 'poslana' && <dl><div><dt>Po sprejemu</dt><dd>Projekt preide v termin, nastane osnutek računa.</dd></div><div><dt>Po zavrnitvi</dt><dd>Mojster lahko pripravi novo različico ponudbe.</dd></div></dl>}
   <p className="muted">Interni podatki izvajalca so skriti.</p>
-  {note && <p className="notice" role="status">{note}</p>}
+  {note && <p className="form-note">{note}</p>}
   {open && (confirming === null
    ? <div className="row-actions"><button type="button" ref={accept} disabled={busy} onClick={() => ask(true)}><Icon name="check"/>Sprejmi ponudbo</button><button type="button" ref={reject} className="secondary" disabled={busy} onClick={() => ask(false)}><Icon name="close"/>Zavrni ponudbo</button></div>
    : <div className="row-actions" role="group" aria-label="Potrditev odločitve" ref={group}><p>{confirming ? 'Ali res želite sprejeti ponudbo?' : 'Ali res želite zavrniti ponudbo?'}</p><button type="button" disabled={busy} onClick={() => void decide(confirming)}><Icon name="check"/>{confirming ? 'Potrdi sprejem' : 'Potrdi zavrnitev'}</button><button type="button" className="secondary" disabled={busy} onClick={() => setConfirming(null)}>Prekliči</button></div>)}

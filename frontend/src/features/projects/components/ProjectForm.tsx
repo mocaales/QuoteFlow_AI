@@ -8,10 +8,12 @@ export default function ProjectForm({ item, busy, onSave }: { item?: Project; bu
   void onSave({ e_posta_stranke: text('e_posta_stranke'), naziv: text('naziv'), opis: text('opis'), lokacija_izvedbe: text('lokacija_izvedbe') }, () => form.reset());
  }
  return <form className="editor-form" onSubmit={submit}>
+  <div className="form-grid">
   {!item && <label>E-pošta stranke<input name="e_posta_stranke" type="email" required maxLength={320} autoComplete="off"/></label>}
   <label>Naziv<input name="naziv" defaultValue={item?.naziv} required maxLength={200} autoFocus={!!item}/></label>
   <label>Lokacija izvedbe<input name="lokacija_izvedbe" defaultValue={item?.lokacija_izvedbe} maxLength={300}/></label>
   <label>Opis<textarea name="opis" defaultValue={item?.opis} maxLength={2000}/></label>
+  </div>
   <button type="submit" disabled={busy}><Icon name={item ? 'check' : 'plus'}/>{item ? 'Shrani projekt' : 'Ustvari projekt'}</button>
  </form>;
 }

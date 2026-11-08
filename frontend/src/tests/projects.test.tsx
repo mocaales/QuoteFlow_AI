@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
+import { render, expectToast } from './render';
 import userEvent from '@testing-library/user-event';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
 import WorkspacePage from '../pages/WorkspacePage';
@@ -7,6 +8,7 @@ import { api } from '../services/api';
 vi.mock('../services/api', () => ({ api: vi.fn() }));
 const mockedApi=vi.mocked(api);
 const client={} as SupabaseClient;
+const pickMenu=async(proj:string,item:string)=>{await userEvent.click(await screen.findByRole('button',{name:`Več dejanj ${proj}`}));await userEvent.click(await screen.findByRole('menuitem',{name:item}))};
 const session={access_token:'token',user:{email:'ana@example.test'}} as Session;
 const p=(id:string,naziv:string,faza:string,more={})=>({id,naziv,opis:'Opis dela',lokacija_izvedbe:'Maribor, Glavni trg 1',faza,stranka_ime:'Janez',stranka_priimek:'Kranjc',stranka_e_posta:'janez@example.test',termin_od:null,termin_do:null,...more});
 const mojster={id:'u',e_posta:'ana@example.test',ime:'Ana',priimek:'Novak',vloge:[{id:'r',podjetje_id:'a',vloga:'mojster',naziv:'A'},{id:'s',podjetje_id:null,vloga:'stranka',naziv:null}]};
@@ -36,7 +38,7 @@ describe('Projekti mojstra',()=>{
   await go('Projekti');await screen.findByText('Obnova kopalnice');
   await userEvent.type(screen.getByLabelText('E-pošta stranke'),'  janez@example.test ');await userEvent.type(screen.getByLabelText('Naziv'),'Nov strop');
   await userEvent.type(screen.getByLabelText('Lokacija izvedbe'),'Kranj');await userEvent.type(screen.getByLabelText('Opis'),'Knauf');
-  await userEvent.click(screen.getByRole('button',{name:'Ustvari projekt'}));
+  await userEvent.click(screen.getByRole('button',{name:'Ustvari projekt'}));await expectToast('Projekt je ustvarjen.');
   await waitFor(()=>expect(mockedApi).toHaveBeenCalledWith(client,'/podjetja/a/projekti','POST',{e_posta_stranke:'janez@example.test',naziv:'Nov strop',opis:'Knauf',lokacija_izvedbe:'Kranj'}));
  });
  it('pri neregistrirani stranki pokaže napako QFP06',async()=>{
@@ -47,21 +49,21 @@ describe('Projekti mojstra',()=>{
   expect((await screen.findByRole('alert')).textContent).toContain('Uporabnik s tem e-poštnim naslovom ni registrirana stranka.');
  });
  it('uredi projekt in pošlje PUT brez e-pošte stranke',async()=>{
-  await go('Projekti');await userEvent.click(await screen.findByRole('button',{name:/Uredi Obnova kopalnice/}));
-  const naziv=screen.getByLabelText('Naziv') as HTMLInputElement;expect(naziv.value).toBe('Obnova kopalnice');
+  await go('Projekti');await pickMenu('Obnova kopalnice','Uredi projekt');
+  await screen.findByRole('dialog',{name:'Uredi projekt'});const naziv=screen.getByLabelText('Naziv') as HTMLInputElement;expect(naziv.value).toBe('Obnova kopalnice');
   await userEvent.clear(naziv);await userEvent.type(naziv,'Obnova kopalnice 2');
   await userEvent.click(screen.getByRole('button',{name:/Shrani projekt/}));
   await waitFor(()=>expect(mockedApi).toHaveBeenCalledWith(client,'/podjetja/a/projekti/1','PUT',{naziv:'Obnova kopalnice 2',opis:'Opis dela',lokacija_izvedbe:'Maribor, Glavni trg 1'}));
  });
  it('zahtevaj ogled je samo pri projektu v fazi pregled in pokliče POST',async()=>{
   await go('Projekti');await screen.findByText('Menjava oken');
-  expect(screen.queryByRole('button',{name:'Zahtevaj ogled Menjava oken'})).toBeNull();
-  await userEvent.click(screen.getByRole('button',{name:'Zahtevaj ogled Obnova kopalnice'}));
+  await userEvent.click(await screen.findByRole('button',{name:'Več dejanj Menjava oken'}));expect(screen.queryByRole('menuitem',{name:'Zahtevaj ogled'})).toBeNull();await userEvent.keyboard('{Escape}');
+  await pickMenu('Obnova kopalnice','Zahtevaj ogled');
   await waitFor(()=>expect(mockedApi).toHaveBeenCalledWith(client,'/podjetja/a/projekti/1/ogled','POST'));
  });
  it('pri QFP07 pokaže napako o fazi projekta',async()=>{
   failure=new Error('V tej fazi projekta to dejanje ni dovoljeno.');
-  await go('Projekti');await userEvent.click(await screen.findByRole('button',{name:'Zahtevaj ogled Obnova kopalnice'}));
+  await go('Projekti');await pickMenu('Obnova kopalnice','Zahtevaj ogled');
   expect((await screen.findByRole('alert')).textContent).toContain('V tej fazi projekta to dejanje ni dovoljeno.');
  });
 });

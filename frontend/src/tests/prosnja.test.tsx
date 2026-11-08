@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
+import { render, expectToast } from './render';
 import userEvent from '@testing-library/user-event';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
 import WorkspacePage from '../pages/WorkspacePage';
@@ -54,6 +55,7 @@ describe('Prošnja mojstra', () => {
   await userEvent.type(screen.getByLabelText('Davčna številka (neobvezno)'), 'SI12345678');
   await userEvent.click(screen.getByRole('button', { name: 'Oddaj prošnjo' }));
   await waitFor(() => expect(calls('/prosnje').find(c => c[2] === 'POST')?.[3]).toMatchObject({ davcna_stevilka: 'SI12345678' }));
+  await expectToast('Prošnja je oddana. Administrator jo bo pregledal.');
  });
  it('prazna obvezna polja ne sprožijo oddaje', async () => {
   render(<MasterApplication client={client}/>);
